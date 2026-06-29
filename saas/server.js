@@ -102,6 +102,11 @@ const FREQUENCIES = {
 // Resiliente: si la IA falla, devuelve la config sin cambios.
 async function applyAI(cfg, sections, topics) {
   if (!cfg || !cfg.useAI) return cfg;
+  // Junta los PDFs adjuntos que vengan en los correos (para que Claude los lea).
+  const pdfs = [];
+  for (const m of cfg.emails || []) {
+    if (Array.isArray(m.pdfs)) pdfs.push(...m.pdfs);
+  }
   const input = {
     title: cfg.title,
     period: cfg.period,
@@ -110,6 +115,7 @@ async function applyAI(cfg, sections, topics) {
     emails: cfg.emails || [],
     topics: topics || [],
     instructions: cfg.instructions || '',
+    pdfs: pdfs.slice(0, 3),
   };
   try {
     const content = ai.isConfigured()
@@ -149,7 +155,18 @@ async function gatherSources(user, cfg, topics) {
       if (cfg.fromSender && cfg.fromSender.trim()) {
         q += ' from:(' + cfg.fromSender.trim() + ')';
       }
-      emails = await google.recentEmails(user.tokens, q, 20);
+      // Si pidió leer PDFs, restringe a correos con adjunto y baja los PDFs.
+      if (cfg.readPdfs) q += ' has:attachment';
+      emails = await google.recentEmails(user.tokens, q, 20, { includePdfs: Boolean(cfg.readPdfs) });
+    } else if (cfg.readPdfs) {
+      // Demo de lectura de PDFs: simula un estado de cuenta adjunto.
+      emails = [
+        {
+          subject: 'Estado de cuenta — Tarjeta •••• 4022', from: 'estados@bancodemo.com', date: 'lun',
+          snippet: 'Adjuntamos su estado de cuenta del período. Movimientos: Spotify $199, ' +
+            'Supermercado $1,240, Netflix $299, Gasolina $800, Colegiatura $3,500.',
+        },
+      ];
     } else {
       emails = [
         { subject: 'Cierre de venta — Cliente A', from: 'ventas@empresa.com', date: 'lun', snippet: 'Se concretó la venta del plan anual con el Cliente A por $12,000.' },

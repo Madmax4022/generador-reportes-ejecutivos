@@ -70,27 +70,61 @@ function decodeBody(payload) {
   return '';
 }
 
+// Busca recursivamente los adjuntos PDF dentro del payload de un mensaje.
+function findPdfParts(payload, acc = []) {
+  if (!payload) return acc;
+  const fn = payload.filename || '';
+  const isPdf = payload.mimeType === 'application/pdf' || /\.pdf$/i.test(fn);
+  if (isPdf && payload.body && payload.body.attachmentId) {
+    acc.push({ filename: fn || 'documento.pdf', attachmentId: payload.body.attachmentId });
+  }
+  if (Array.isArray(payload.parts)) {
+    for (const p of payload.parts) findPdfParts(p, acc);
+  }
+  return acc;
+}
+
 // Extrae correos reales (asunto + remitente + fecha + extracto del cuerpo).
 // query por defecto: última semana. Pensado para reportes "con data dura".
-async function recentEmails(tokens, query = 'newer_than:7d', limit = 15) {
+// opts.includePdfs: además baja los PDFs adjuntos (base64) para que Claude
+// los lea (estados de cuenta, facturas). Con tope de cantidad y tamaño.
+async function recentEmails(tokens, query = 'newer_than:7d', limit = 15, opts = {}) {
+  const { includePdfs = false, maxPdfs = 3, maxPdfBytes = 8 * 1024 * 1024 } = opts;
   const auth = clientForTokens(tokens);
   const gmail = google.gmail({ version: 'v1', auth });
   const list = await gmail.users.messages.list({ userId: 'me', q: query, maxResults: Math.min(limit, 50) });
   if (!list.data.messages) return [];
   const out = [];
+  let pdfBudget = maxPdfs;
   for (const m of list.data.messages.slice(0, limit)) {
     const msg = await gmail.users.messages.get({ userId: 'me', id: m.id, format: 'full' });
-    const headers = msg.data.payload.headers || [];
+    const payload = msg.data.payload;
+    const headers = payload.headers || [];
     const h = (name) => (headers.find((x) => x.name === name) || {}).value || '';
-    const body = decodeBody(msg.data.payload).replace(/\s+/g, ' ').trim();
-    out.push({
+    const body = decodeBody(payload).replace(/\s+/g, ' ').trim();
+    const entry = {
       subject: h('Subject') || '(sin asunto)',
       from: h('From'),
       date: h('Date'),
       // Cuerpo amplio: estados de cuenta / correos con desglose necesitan
       // más texto para que la IA extraiga montos, conceptos y recurrentes.
       snippet: body.slice(0, 1500),
-    });
+    };
+    if (includePdfs && pdfBudget > 0) {
+      for (const p of findPdfParts(payload)) {
+        if (pdfBudget <= 0) break;
+        try {
+          const att = await gmail.users.messages.attachments.get({ userId: 'me', messageId: m.id, id: p.attachmentId });
+          const buf = Buffer.from(att.data.data || '', 'base64url');
+          if (!buf.length || buf.length > maxPdfBytes) continue;
+          (entry.pdfs = entry.pdfs || []).push({ filename: p.filename, data: buf.toString('base64') });
+          pdfBudget--;
+        } catch (e) {
+          console.error('pdf attachment:', e.message);
+        }
+      }
+    }
+    out.push(entry);
   }
   return out;
 }

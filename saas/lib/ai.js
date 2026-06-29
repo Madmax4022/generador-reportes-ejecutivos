@@ -74,7 +74,7 @@ const REPORT_SCHEMA = {
   additionalProperties: false,
 };
 
-function buildPrompt({ title, period, summary, sections = [], emails = [], topics = [], instructions = '' }) {
+function buildPrompt({ title, period, summary, sections = [], emails = [], topics = [], instructions = '', pdfs = [] }) {
   let material = `Título del reporte: ${title || 'Reporte Ejecutivo'}\n`;
   if (period) material += `Período: ${period}\n`;
   if (summary) material += `\nNotas del usuario:\n${summary}\n`;
@@ -91,6 +91,13 @@ function buildPrompt({ title, period, summary, sections = [], emails = [], topic
           return line;
         })
         .join('\n');
+  }
+  if (pdfs.length) {
+    material +=
+      `\n\nDocumentos PDF adjuntos a los correos (${pdfs.length}): ` +
+      pdfs.map((p) => p.filename).join(', ') +
+      `.\nLee su contenido completo (pueden ser estados de cuenta, facturas o ` +
+      `tablas) y trátalo como FUENTE PRINCIPAL de datos duros.`;
   }
   let focus = '';
   if (topics.length) {
@@ -129,6 +136,16 @@ function buildPrompt({ title, period, summary, sections = [], emails = [], topic
 // Llama a Claude de verdad (requiere ANTHROPIC_API_KEY).
 async function generateReportContent(input) {
   const client = new AnthropicLib(); // lee ANTHROPIC_API_KEY del entorno
+  // Claude lee los PDF de forma nativa: se adjuntan como bloques "document".
+  const userContent = [];
+  for (const pdf of input.pdfs || []) {
+    userContent.push({
+      type: 'document',
+      title: pdf.filename,
+      source: { type: 'base64', media_type: 'application/pdf', data: pdf.data },
+    });
+  }
+  userContent.push({ type: 'text', text: buildPrompt(input) });
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 3000,
@@ -136,7 +153,7 @@ async function generateReportContent(input) {
       'Eres un analista que redacta reportes ejecutivos claros y accionables para ' +
       'jefatura. Escribe en español, en tono profesional y directo.',
     output_config: { format: { type: 'json_schema', schema: REPORT_SCHEMA } },
-    messages: [{ role: 'user', content: buildPrompt(input) }],
+    messages: [{ role: 'user', content: userContent }],
   });
   const text = (response.content.find((b) => b.type === 'text') || {}).text || '{}';
   return JSON.parse(text);

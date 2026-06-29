@@ -41,6 +41,7 @@
         <div class="section" style="margin-top:18px;">
           <h2 style="font-size:1.1em;">📥 Fuentes de datos <span class="muted" style="font-size:.8em;">(requiere conectar Google real)</span></h2>
           <label><input type="checkbox" id="pullEmails" checked style="width:auto" /> Incluir correos del período</label>
+          <label><input type="checkbox" id="readPdfs" style="width:auto" /> 📎 Leer PDFs adjuntos (estados de cuenta, facturas)</label>
           <label>🎯 Temas a seguir <span class="muted" style="font-size:.8em;">(separa con comas — filtra y organiza el reporte por tema)</span></label>
           <input id="topics" placeholder="Ej: Canon, CCAP" />
           <label>✉️ De / remitente <span class="muted" style="font-size:.8em;">(opcional — solo correos de quien indiques)</span></label>
@@ -104,7 +105,7 @@
       return {
         title: title.value, period: period.value, summary: summary.value,
         includePriorities: prio.checked, includeRecommendations: recs.checked,
-        brandName: brand.value, pullEmails: pullEmails.checked, useAI: useAI.checked,
+        brandName: brand.value, pullEmails: pullEmails.checked, readPdfs: readPdfs.checked, useAI: useAI.checked,
         topics: topics.value, fromSender: fromSender.value, instructions: instructions.value,
         emailQuery: emailQuery.value, driveId: driveId.value, sheetId: sheetId.value, sheetRange: sheetRange.value,
         recipients: recipients.value, subject: subject.value,
