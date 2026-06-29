@@ -57,6 +57,7 @@ function generateReportHTML(config = {}) {
     includeRecommendations = true,
     priorities = null,
     recommendations = null,
+    topicSections = null,
     brandName = '',
     aiGenerated = false,
   } = config;
@@ -69,6 +70,17 @@ function generateReportHTML(config = {}) {
     <h3>Resumen Ejecutivo</h3>
     <p>${escapeHtml(summary).replace(/\n/g, '<br>')}</p>
   `;
+
+  // Secciones por tema (filtradas/organizadas por la IA).
+  if (Array.isArray(topicSections) && topicSections.length) {
+    for (const t of topicSections) {
+      body += `
+        <h3>📌 ${escapeHtml(t.topic)}</h3>
+        <p>${escapeHtml(t.summary || '').replace(/\n/g, '<br>')}</p>
+        <p><strong>Seguimiento / próximos pasos:</strong> ${escapeHtml(t.nextSteps || '').replace(/\n/g, '<br>')}</p>
+      `;
+    }
+  }
 
   for (const s of sections) {
     if (!s || !s.title) continue;

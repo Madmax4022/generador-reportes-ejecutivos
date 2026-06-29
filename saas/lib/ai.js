@@ -3,9 +3,9 @@
 // Igual que Google y Stripe: si NO hay ANTHROPIC_API_KEY, funciona en
 // "modo demo" (contenido de ejemplo) para poder mostrar el flujo sin setup.
 //
-// SDK oficial: @anthropic-ai/sdk. Modelo por defecto: claude-opus-4-8
-// (el modelo más capaz actual). Usa "structured outputs" para que Claude
-// devuelva un objeto de reporte limpio en vez de texto libre.
+// SDK oficial: @anthropic-ai/sdk. Modelo por defecto: claude-sonnet-4-6
+// (buena calidad y más barato; configurable con ANTHROPIC_MODEL). Usa
+// "structured outputs" para que Claude devuelva un objeto de reporte limpio.
 // ========================================
 
 let AnthropicLib = null;
@@ -30,6 +30,19 @@ const REPORT_SCHEMA = {
   type: 'object',
   properties: {
     executiveSummary: { type: 'string' },
+    topics: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          topic: { type: 'string' },
+          summary: { type: 'string' },
+          nextSteps: { type: 'string' },
+        },
+        required: ['topic', 'summary', 'nextSteps'],
+        additionalProperties: false,
+      },
+    },
     priorities: {
       type: 'array',
       items: {
@@ -45,11 +58,11 @@ const REPORT_SCHEMA = {
     },
     recommendations: { type: 'array', items: { type: 'string' } },
   },
-  required: ['executiveSummary', 'priorities', 'recommendations'],
+  required: ['executiveSummary', 'topics', 'priorities', 'recommendations'],
   additionalProperties: false,
 };
 
-function buildPrompt({ title, period, summary, sections = [], emails = [] }) {
+function buildPrompt({ title, period, summary, sections = [], emails = [], topics = [] }) {
   let material = `Título del reporte: ${title || 'Reporte Ejecutivo'}\n`;
   if (period) material += `Período: ${period}\n`;
   if (summary) material += `\nNotas del usuario:\n${summary}\n`;
@@ -67,12 +80,25 @@ function buildPrompt({ title, period, summary, sections = [], emails = [] }) {
         })
         .join('\n');
   }
+  let focus = '';
+  if (topics.length) {
+    focus =
+      `\n\nIMPORTANTE — el reporte debe enfocarse SOLO en estos temas: ${topics.join(', ')}.\n` +
+      `- Ignora por completo cualquier correo o dato que NO tenga que ver con esos temas ` +
+      `(publicidad, promociones, asuntos ajenos). NO los menciones.\n` +
+      `- En "topics", crea UNA entrada por cada tema solicitado (${topics.join(', ')}), con: ` +
+      `'topic' (el nombre del tema), 'summary' (qué pasó esta semana sobre ese tema, según el material) ` +
+      `y 'nextSteps' (pendientes/seguimiento). Si no hay nada de un tema, dilo en 'summary'.`;
+  } else {
+    focus = `\n\nEn "topics" agrupa los asuntos principales (2-5) con su resumen y próximos pasos.`;
+  }
   return (
     `A partir del siguiente material en bruto, redacta un reporte ejecutivo para jefatura.\n\n` +
-    `${material}\n\n` +
+    `${material}${focus}\n\n` +
     `Devuelve:\n` +
-    `- executiveSummary: 2-3 frases claras y profesionales en español.\n` +
-    `- priorities: 3-5 temas con su urgencia (Alta/Media/Baja) e impacto (Alto/Medio/Bajo).\n` +
+    `- executiveSummary: 2-3 frases claras en español (visión general de los temas).\n` +
+    `- topics: ver instrucción de arriba (organizado por tema, con seguimiento).\n` +
+    `- priorities: 3-5 temas con urgencia (Alta/Media/Baja) e impacto (Alto/Medio/Bajo).\n` +
     `- recommendations: 3-5 acciones concretas.\n` +
     `Sé concreto y conciso; no inventes datos que no estén en el material.`
   );
@@ -97,11 +123,17 @@ async function generateReportContent(input) {
 // Contenido de ejemplo cuando no hay API key (para demostrar el flujo).
 function demoReportContent(input = {}) {
   const base = (input.summary || '').trim();
+  const reqTopics = (input.topics || []).length ? input.topics : ['Tema general'];
   return {
     executiveSummary:
       (base ? base + ' ' : '') +
       'Este resumen fue redactado automáticamente por IA a partir del material proporcionado, ' +
-      'destacando los avances y puntos de decisión más relevantes del período.',
+      'enfocado en los temas solicitados.',
+    topics: reqTopics.map((t) => ({
+      topic: t,
+      summary: `(Demo) Resumen de lo ocurrido esta semana sobre "${t}", filtrando solo lo relacionado con ese tema.`,
+      nextSteps: `(Demo) Pendientes y seguimiento de "${t}".`,
+    })),
     priorities: [
       { tema: 'Cerrar pendientes prioritarios del período', urgencia: 'Alta', impacto: 'Alto' },
       { tema: 'Dar seguimiento a métricas clave', urgencia: 'Media', impacto: 'Alto' },

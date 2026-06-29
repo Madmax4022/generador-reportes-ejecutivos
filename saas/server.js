@@ -100,7 +100,7 @@ const FREQUENCIES = {
 // Si el usuario pidió IA, enriquece la config con resumen/prioridades/
 // recomendaciones generadas por Claude (o contenido demo si no hay API key).
 // Resiliente: si la IA falla, devuelve la config sin cambios.
-async function applyAI(cfg, sections) {
+async function applyAI(cfg, sections, topics) {
   if (!cfg || !cfg.useAI) return cfg;
   const input = {
     title: cfg.title,
@@ -108,6 +108,7 @@ async function applyAI(cfg, sections) {
     summary: cfg.summary,
     sections: sections || [],
     emails: cfg.emails || [],
+    topics: topics || [],
   };
   try {
     const content = ai.isConfigured()
@@ -116,6 +117,7 @@ async function applyAI(cfg, sections) {
     return {
       ...cfg,
       summary: content.executiveSummary || cfg.summary,
+      topicSections: content.topics || null,
       priorities: content.priorities,
       recommendations: content.recommendations,
       includePriorities: true,
@@ -130,14 +132,19 @@ async function applyAI(cfg, sections) {
 
 // Recopila datos REALES del usuario (correos de la semana, Drive, Sheets).
 // En modo demo (o sin cuenta conectada) devuelve datos de ejemplo realistas.
-async function gatherSources(user, cfg) {
+async function gatherSources(user, cfg, topics) {
   const sections = Array.isArray(cfg.sections) ? [...cfg.sections] : [];
   let emails = [];
   const real = user && user.tokens && !DEMO;
 
   if (cfg.pullEmails) {
     if (real) {
-      emails = await google.recentEmails(user.tokens, cfg.emailQuery || 'newer_than:7d', 15);
+      // Filtra a nivel Gmail por los temas: newer_than:7d ("Canon" OR "CCAP")
+      let q = cfg.emailQuery || 'newer_than:7d';
+      if (topics && topics.length) {
+        q += ' (' + topics.map((t) => `"${t}"`).join(' OR ') + ')';
+      }
+      emails = await google.recentEmails(user.tokens, q, 20);
     } else {
       emails = [
         { subject: 'Cierre de venta — Cliente A', from: 'ventas@empresa.com', date: 'lun', snippet: 'Se concretó la venta del plan anual con el Cliente A por $12,000.' },
@@ -177,8 +184,9 @@ async function gatherSources(user, cfg) {
 
 // Recopila datos -> aplica IA -> devuelve el HTML del reporte.
 async function buildReport(user, cfg) {
-  const { sections, emails } = await gatherSources(user, cfg);
-  const finalCfg = await applyAI({ ...cfg, emails }, sections);
+  const topics = (cfg.topics || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const { sections, emails } = await gatherSources(user, cfg, topics);
+  const finalCfg = await applyAI({ ...cfg, emails }, sections, topics);
   return generateReportHTML({ ...finalCfg, sections });
 }
 

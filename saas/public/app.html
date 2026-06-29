@@ -41,7 +41,9 @@
         <div class="section" style="margin-top:18px;">
           <h2 style="font-size:1.1em;">📥 Fuentes de datos <span class="muted" style="font-size:.8em;">(requiere conectar Google real)</span></h2>
           <label><input type="checkbox" id="pullEmails" checked style="width:auto" /> Incluir correos del período</label>
-          <label>Consulta de Gmail</label>
+          <label>🎯 Temas a seguir <span class="muted" style="font-size:.8em;">(separa con comas — filtra y organiza el reporte por tema)</span></label>
+          <input id="topics" placeholder="Ej: Canon, CCAP" />
+          <label>Consulta de Gmail <span class="muted" style="font-size:.8em;">(período)</span></label>
           <input id="emailQuery" value="newer_than:7d" placeholder="ej: newer_than:7d label:importante" />
           <label>Documento de Drive (URL o ID, opcional)</label>
           <input id="driveId" placeholder="https://docs.google.com/document/d/..." />
@@ -99,7 +101,7 @@
         title: title.value, period: period.value, summary: summary.value,
         includePriorities: prio.checked, includeRecommendations: recs.checked,
         brandName: brand.value, pullEmails: pullEmails.checked, useAI: useAI.checked,
-        emailQuery: emailQuery.value, driveId: driveId.value, sheetId: sheetId.value, sheetRange: sheetRange.value,
+        topics: topics.value, emailQuery: emailQuery.value, driveId: driveId.value, sheetId: sheetId.value, sheetRange: sheetRange.value,
         recipients: recipients.value, subject: subject.value,
       };
     }
