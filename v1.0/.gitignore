@@ -1,0 +1,19 @@
+# Variables de entorno
+.env
+.env.local
+
+# Credenciales Google
+credentials.json
+token.json
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
