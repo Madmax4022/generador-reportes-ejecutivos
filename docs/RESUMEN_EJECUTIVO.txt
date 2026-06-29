@@ -1,0 +1,478 @@
+# 📊 GENERADOR DE REPORTES EJECUTIVOS
+## Resumen Ejecutivo y Guía Rápida
+
+---
+
+## 🎯 ¿QUÉ ES?
+
+Una **aplicación web integrable** que:
+- ✅ Extrae información de **Gmail, Drive, Sheets**
+- ✅ La organiza automáticamente
+- ✅ Genera **reportes profesionales** en segundos
+- ✅ Los envía por correo a jefatura
+- ✅ Se **programa automáticamente** (diario, semanal, mensual)
+
+---
+
+## 💼 CASOS DE USO PRINCIPALES
+
+### 1️⃣ Reporte Semanal de Gestión
+```
+LUNES A VIERNES → 5:00 PM
+├─ Gmail: Correos importantes
+├─ Drive: Documento de síntesis
+├─ Manual: Hallazgos del equipo
+└─ RESULTADO: Email a jefatura
+```
+
+### 2️⃣ Reporte Mensual de Métricas
+```
+1° DEL MES → 10:00 AM
+├─ Sheets: Dashboard de KPIs
+├─ Drive: Análisis de rendimiento
+├─ Gráficos automáticos
+└─ RESULTADO: Reporte ejecutivo
+```
+
+### 3️⃣ Consolidado de Proyectos
+```
+CADA LUNES → 8:00 AM
+├─ Sheets: Matriz de proyectos
+├─ Drive: Planes y avances
+├─ Prioridades
+└─ RESULTADO: Estado de proyectos
+```
+
+---
+
+## ⚡ INICIO RÁPIDO (SIN INSTALACIÓN)
+
+### Opción 1: Solo Interfaz Web
+```
+1. Abre: ReporteExecutivo.html en tu navegador
+2. Agrega fuentes (Gmail, Drive, Manual)
+3. Configura reporte
+4. Descarga como HTML
+5. Envía por correo manualmente
+```
+
+### Opción 2: Con Servidor (Recomendado)
+```
+1. npm install
+2. Configura .env con credenciales Google
+3. npm start
+4. http://localhost:3000
+5. Conecta con Google
+6. ¡Genera reportes!
+```
+
+---
+
+## 📋 ARCHIVOS DEL PROYECTO
+
+### 🎨 Interfaz
+```
+ReporteExecutivo.html
+├─ Agregar fuentes de datos
+├─ Configurar reporte
+├─ Vista previa
+└─ Descargar / Enviar
+```
+
+### 🔧 Backend
+```
+backend-server.js
+├─ API REST
+├─ Integración Google APIs
+├─ Procesamiento de datos
+└─ Envío de correos
+```
+
+### 📦 Dependencias
+```
+package.json
+├─ Express.js
+├─ Google APIs
+├─ Nodemailer
+└─ node-cron
+```
+
+### 📚 Documentación
+```
+├─ README.md              ← Comienza aquí
+├─ INSTALACION.md         ← Pasos de instalación
+├─ GUIA_INTEGRACION.md    ← Guía técnica completa
+├─ AUTOMATIZACION.md      ← Programación de tareas
+└─ .env.example           ← Configuración
+```
+
+---
+
+## 🔄 FLUJO DE TRABAJO
+
+```
+                    ┌─────────────────────┐
+                    │ GENERADOR REPORTES  │
+                    └─────────────────────┘
+                              │
+                ┌─────────────┼─────────────┐
+                ▼             ▼             ▼
+          ┌──────────┐  ┌──────────┐  ┌──────────┐
+          │  GMAIL   │  │  DRIVE   │  │ SHEETS   │
+          │ Correos  │  │ Docs/PDF │  │ Datos    │
+          └──────────┘  └──────────┘  └──────────┘
+                │             │             │
+                └─────────────┼─────────────┘
+                              │
+                    ┌─────────▼────────┐
+                    │  PROCESAMIENTO   │
+                    │ - Organizar      │
+                    │ - Resumir        │
+                    │ - Priorizar      │
+                    └─────────┬────────┘
+                              │
+                    ┌─────────▼────────┐
+                    │  GENERACIÓN      │
+                    │ - Resumen exec.  │
+                    │ - Matriz prior.  │
+                    │ - Gráficos       │
+                    │ - Recomend.      │
+                    └─────────┬────────┘
+                              │
+                ┌─────────────┼─────────────┐
+                ▼             ▼             ▼
+            ┌────────┐   ┌────────┐   ┌────────┐
+            │ EMAIL  │   │  HTML  │   │ DRIVE  │
+            │ Enviar │   │ Descar │   │ Guar.  │
+            └────────┘   └────────┘   └────────┘
+```
+
+---
+
+## 📧 EJEMPLO: REPORTE FINAL
+
+```
+╔════════════════════════════════════════════════╗
+║        REPORTE EJECUTIVO - JUNIO 2026          ║
+║                                                ║
+║ Período: Junio 1-30, 2026                     ║
+║ Generado: 28/06/2026 17:30                    ║
+╚════════════════════════════════════════════════╝
+
+RESUMEN EJECUTIVO
+─────────────────────────────────────────────────
+Este reporte consolida información de múltiples
+fuentes. Se presentan hallazgos clave, métricas
+principales y recomendaciones prioritarias.
+
+HALLAZGOS CLAVE
+─────────────────────────────────────────────────
+• 10 correos prioritarios procesados
+• 3 documentos analizados
+• 150 datos de hojas de cálculo importados
+
+MATRIZ DE PRIORIDADES
+─────────────────────────────────────────────────
+Tema                  Urgencia    Impacto    Acción
+─────────────────────────────────────────────────
+Implementar X         🔴 Alta     Alto       Inmediata
+Revisar Y             🟡 Media    Medio      Esta semana
+Considerar Z          🟢 Baja     Bajo       Próximo mes
+
+RECOMENDACIONES
+─────────────────────────────────────────────────
+1. Ejecutar acción inmediata en tema prioritario
+2. Agendar reunión de seguimiento
+3. Comunicar a equipos responsables
+
+PRÓXIMOS PASOS
+─────────────────────────────────────────────────
+□ Revisar en junta ejecutiva
+□ Tomar decisiones
+□ Implementar acciones
+□ Programar seguimiento
+```
+
+---
+
+## 🚀 INSTALACIÓN PASO A PASO
+
+### Paso 1: Descargar Archivos
+```bash
+# Opción A: ZIP
+Descargar ZIP → Extraer carpeta
+
+# Opción B: Git
+git clone https://tu-repo
+cd generador-reportes
+```
+
+### Paso 2: Instalar Node.js
+```bash
+# Windows/Mac: https://nodejs.org/
+# Linux:
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+### Paso 3: Instalar Dependencias
+```bash
+npm install
+```
+
+### Paso 4: Obtener Credenciales Google
+```bash
+1. Ir a: https://console.cloud.google.com/
+2. Crear proyecto
+3. Habilitar APIs (Gmail, Drive, Sheets)
+4. Crear OAuth credentials (Desktop)
+5. Descargar credentials.json
+6. Guardar en carpeta del proyecto
+```
+
+### Paso 5: Configurar Variables
+```bash
+cp .env.example .env
+# Editar .env y agregar credenciales
+```
+
+### Paso 6: Iniciar Servidor
+```bash
+npm start
+# Servidor en: http://localhost:3000
+```
+
+### Paso 7: Usar la Aplicación
+```bash
+1. Abre http://localhost:3000
+2. Haz clic en "Conectar con Google"
+3. Autoriza los permisos
+4. ¡Comienza a generar reportes!
+```
+
+---
+
+## 🎨 INTERFAZ PRINCIPAL
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    GENERADOR DE                      │
+│             REPORTES EJECUTIVOS                      │
+│                                                      │
+│  Integración con Google Workspace                   │
+└─────────────────────────────────────────────────────┘
+
+┌──────────────────┐  ┌──────────────────┐
+│  FUENTES DATOS   │  │  CONFIGURACIÓN   │
+│                  │  │                  │
+│ 📧 Gmail         │  │ Título:          │
+│ 📄 Drive         │  │ Período:         │
+│ 📊 Sheets        │  │ Resumen:         │
+│ ✏️ Manual        │  │ Destinatarios:   │
+│                  │  │                  │
+│ [+ Agregar]      │  │ ☑ Prioridades   │
+└──────────────────┘  │ ☑ Recomend.     │
+                      └──────────────────┘
+
+┌──────────────────────────────────────┐
+│      VISTA PREVIA Y ACCIONES         │
+│                                      │
+│ [👁️ Vista Previa]  [📧 Enviar]      │
+│ [📥 Descargar]                       │
+│                                      │
+│ ┌──────────────────────────────────┐│
+│ │ Reporte Ejecutivo - Junio 2026   ││
+│ │                                  ││
+│ │ Período: Junio 1-30, 2026        ││
+│ │                                  ││
+│ │ RESUMEN EJECUTIVO...             ││
+│ │ [Contenido del reporte]          ││
+│ └──────────────────────────────────┘│
+└──────────────────────────────────────┘
+```
+
+---
+
+## ⏰ AUTOMATIZACIÓN
+
+### Linux/Mac - Cron
+```bash
+# Diariamente a las 9 AM
+0 9 * * * /usr/bin/node /home/usuario/daily-report.js
+
+# Lunes a las 8 AM
+0 8 * * 1 /usr/bin/node /home/usuario/weekly-report.js
+
+# 1° del mes a las 10 AM
+0 10 1 * * /usr/bin/node /home/usuario/monthly-report.js
+```
+
+### Windows - Task Scheduler
+```
+1. Abrir: Programador de tareas
+2. Crear tarea básica
+3. Nombre: "Reporte Diario"
+4. Trigger: Diariamente a las 9 AM
+5. Acción: Ejecutar node.exe con daily-report.js
+6. Aplicar
+```
+
+### Google Cloud Scheduler
+```
+Frecuencia: 0 9 * * *
+URL: https://tu-dominio.com/api/generate-report
+Método: POST
+```
+
+---
+
+## 🔐 SEGURIDAD
+
+✅ **OAuth 2.0** - No almacena contraseñas  
+✅ **Permisos limitados** - Solo lectura (sin modificar)  
+✅ **Tokens temporales** - Expiran automáticamente  
+✅ **HTTPS** - Encriptación en tránsito  
+✅ **Env variables** - Credenciales no en código  
+
+---
+
+## 📊 COMPARACIÓN: CON vs SIN
+
+### SIN Generador (Método Manual)
+```
+⏱️ Tiempo: 1-2 horas por reporte
+📌 Procesos:
+  1. Revisar correos (30 min)
+  2. Revisar documentos (20 min)
+  3. Extraer datos de hojas (30 min)
+  4. Compilar en Word (30 min)
+  5. Formatear y enviar (10 min)
+
+❌ Errores: Información inconsistente
+❌ Retrasos: Reportes tarde
+❌ Manual: Tedioso y repetitivo
+```
+
+### CON Generador
+```
+⏱️ Tiempo: 2-3 minutos
+📌 Procesos:
+  1. Configurar fuentes (30 seg)
+  2. Hacer clic en "Generar" (1 seg)
+  3. Hacer clic en "Enviar" (1 seg)
+
+✅ Automático: Todos los datos integrados
+✅ Confiable: Mismo formato siempre
+✅ Programable: Sin intervención humana
+```
+
+---
+
+## 💡 TIPS Y TRUCOS
+
+### Gmail - Filtros Útiles
+```
+is:unread              → Sin leer
+label:importante       → Etiqueta específica
+from:jefe@empresa.com  → De un remitente
+subject:reporte        → Palabra en asunto
+```
+
+### Drive - Mejor Extracción
+```
+Google Docs: Extrae texto completo
+PDFs: Lee contenido automáticamente
+Presentaciones: Obtiene viñetas
+Hojas: Importa datos estructurados
+```
+
+### Sheets - Rangos
+```
+Sheet1!A1:Z100       → Especificar rango
+Sheet1!A:A           → Columna completa
+Sheet1!1:10          → Primeras 10 filas
+```
+
+---
+
+## 🔗 RECURSOS ÚTILES
+
+| Recurso | Link |
+|---------|------|
+| **Google Cloud Console** | https://console.cloud.google.com/ |
+| **Gmail API Docs** | https://developers.google.com/gmail |
+| **Drive API Docs** | https://developers.google.com/drive |
+| **Sheets API Docs** | https://developers.google.com/sheets |
+| **Node.js** | https://nodejs.org/ |
+
+---
+
+## 📞 SOPORTE
+
+| Canal | Contacto |
+|-------|----------|
+| **Email** | soporte@empresa.com |
+| **Slack** | #soporte-reportes |
+| **Docs** | GUIA_INTEGRACION.md |
+| **Issues** | GitHub issues |
+
+---
+
+## ✅ CHECKLIST DE INSTALACIÓN
+
+- ⬜ Descargar archivos
+- ⬜ Instalar Node.js
+- ⬜ Ejecutar `npm install`
+- ⬜ Obtener credenciales Google
+- ⬜ Configurar `.env`
+- ⬜ Ejecutar `npm start`
+- ⬜ Abrir http://localhost:3000
+- ⬜ Conectar con Google
+- ⬜ Crear primer reporte
+- ⬜ Enviar a jefatura
+
+---
+
+## 🎯 PRÓXIMOS PASOS
+
+```
+AHORA              → Lee este documento
+     ↓
+15 MINUTOS         → Instala según INSTALACION.md
+     ↓
+30 MINUTOS         → Configura credenciales Google
+     ↓
+1 HORA             → Genera primer reporte
+     ↓
+2 HORAS            → Automatiza ejecución (cron/scheduler)
+     ↓
+LISTO PARA USAR    → ¡Sistema funcionando!
+```
+
+---
+
+## 🎉 ¡LISTO PARA EMPEZAR!
+
+**Documentación Completa:**
+- 📖 README.md
+- 🔧 INSTALACION.md
+- 📚 GUIA_INTEGRACION.md
+- ⏰ AUTOMATIZACION.md
+
+**Archivos Principales:**
+- 🎨 ReporteExecutivo.html (interfaz)
+- 🖥️ backend-server.js (servidor)
+- 📦 package.json (dependencias)
+
+---
+
+<div align="center">
+
+### Hecho con ❤️ para automatizar reportes
+
+**¿Preguntas?** Consulta la documentación o contacta a soporte
+
+**Versión:** 1.0.0  
+**Estado:** ✅ Listo para Producción
+
+</div>
