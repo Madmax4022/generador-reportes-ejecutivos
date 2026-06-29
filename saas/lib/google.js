@@ -131,12 +131,18 @@ async function recentEmails(tokens, query = 'newer_than:7d', limit = 15, opts = 
           const buf = Buffer.from(att.data.data || '', 'base64url');
           if (!buf.length || buf.length > maxPdfBytes) continue;
           // Intento barato: extraer el texto del PDF localmente (0 tokens).
+          // Con timeout: si pdf-parse se cuelga con un PDF raro, no bloquea
+          // la petición; caemos a la visión de Claude (base64).
           let text = '';
           if (pdfParse) {
             try {
-              const parsed = await pdfParse(buf);
+              const parsed = await Promise.race([
+                pdfParse(buf),
+                new Promise((_, rej) => setTimeout(() => rej(new Error('pdf-parse timeout')), 15000)),
+              ]);
               text = (parsed.text || '').replace(/\n{3,}/g, '\n\n').trim();
             } catch (e) {
+              console.error('pdf-parse:', e.message);
               text = '';
             }
           }

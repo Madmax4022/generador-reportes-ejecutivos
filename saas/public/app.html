@@ -169,14 +169,14 @@
       const r = await fetch('/api/report/preview', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(config()) });
       const d = await r.json();
       if (d.html) document.getElementById('preview').innerHTML = d.html;
-      else toast(d.error || 'Error', 'err');
+      else toast((d.error || 'Error') + (d.detail ? ': ' + d.detail : ''), 'err');
     }
 
     async function sendNow() {
       const r = await fetch('/api/report/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(config()) });
       const d = await r.json();
       if (d.ok) toast(d.demo ? 'Envío simulado (demo) a ' + d.sentTo.join(', ') : 'Enviado a ' + d.sentTo.join(', '), 'ok');
-      else toast(d.error || 'Error', 'err');
+      else toast((d.error || 'Error') + (d.detail ? ': ' + d.detail : ''), 'err');
     }
 
     async function schedule() {

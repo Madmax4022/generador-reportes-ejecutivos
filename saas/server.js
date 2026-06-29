@@ -157,7 +157,23 @@ async function gatherSources(user, cfg, topics) {
       }
       // Si pidió leer PDFs, restringe a correos con adjunto y baja los PDFs.
       if (cfg.readPdfs) q += ' has:attachment';
-      emails = await google.recentEmails(user.tokens, q, 20, { includePdfs: Boolean(cfg.readPdfs) });
+      try {
+        emails = await google.recentEmails(user.tokens, q, 20, { includePdfs: Boolean(cfg.readPdfs) });
+      } catch (e) {
+        console.error('gather emails/pdfs failed:', e.stack || e.message);
+        // No tirar todo el reporte: si falló leyendo PDFs, reintenta sin ellos.
+        if (cfg.readPdfs) {
+          try {
+            emails = await google.recentEmails(user.tokens, q, 20, { includePdfs: false });
+          } catch (_) { emails = []; }
+        }
+        sections.push({
+          title: '⚠️ Aviso',
+          content:
+            'No se pudieron leer los PDF adjuntos (' + e.message + '). ' +
+            'El resto del reporte se generó con el texto de los correos.',
+        });
+      }
     } else if (cfg.readPdfs) {
       // Demo de lectura de PDFs: simula un estado de cuenta adjunto.
       emails = [
@@ -300,8 +316,8 @@ app.post('/api/report/preview', requireLogin, async (req, res) => {
     const html = await buildReport(currentUser(req), req.body || {});
     res.json({ html });
   } catch (e) {
-    console.error('preview error:', e.message);
-    res.status(500).json({ error: 'No se pudo generar la vista previa' });
+    console.error('preview error:', e.stack || e.message);
+    res.status(500).json({ error: 'No se pudo generar la vista previa', detail: e.message });
   }
 });
 
@@ -317,8 +333,8 @@ app.post('/api/report/send', requireLogin, requireAccess, async (req, res) => {
     const messageId = await google.sendEmail(user.tokens, { to: recipients, subject: cfg.subject || cfg.title || 'Reporte Ejecutivo', html });
     res.json({ ok: true, messageId, sentTo: recipients });
   } catch (e) {
-    console.error('send error:', e.message);
-    res.status(500).json({ error: 'No se pudo enviar el reporte' });
+    console.error('send error:', e.stack || e.message);
+    res.status(500).json({ error: 'No se pudo enviar el reporte', detail: e.message });
   }
 });
 
