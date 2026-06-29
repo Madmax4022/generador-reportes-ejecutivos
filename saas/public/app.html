@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoReport — Mi panel</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">📈 AutoReport</div>
+      <div>
+        <span id="who" class="muted"></span>
+        <button class="btn btn-ghost" onclick="logout()">Salir</button>
+      </div>
+    </div>
+
+    <div id="demoBanner" class="banner" style="display:none;">
+      🟡 <strong>Modo demo:</strong> estás viendo el producto sin conectar una cuenta real.
+      Los envíos son simulados. Para activar Google real, el operador agrega credenciales en <code>.env</code>.
+    </div>
+
+    <div class="row section">
+      <!-- Configuración -->
+      <div>
+        <h2>1. Arma tu reporte</h2>
+        <label>Título</label>
+        <input id="title" value="Reporte Ejecutivo - Este mes" />
+        <label>Período</label>
+        <input id="period" placeholder="Ej: Junio 2026" />
+        <label>Resumen ejecutivo</label>
+        <textarea id="summary">Síntesis de los avances y hallazgos clave del período.</textarea>
+
+        <label><input type="checkbox" id="pullEmails" style="width:auto" /> Incluir mis correos recientes</label>
+        <label><input type="checkbox" id="prio" checked style="width:auto" /> Incluir matriz de prioridades</label>
+        <label><input type="checkbox" id="recs" checked style="width:auto" /> Incluir recomendaciones</label>
+
+        <label>Marca / firma (opcional)</label>
+        <input id="brand" placeholder="Ej: KANAN Sentinel Inc." />
+
+        <label>Destinatarios (separa con comas)</label>
+        <input id="recipients" placeholder="jefe@empresa.com, cliente@empresa.com" />
+        <label>Asunto del correo</label>
+        <input id="subject" value="Reporte Ejecutivo" />
+
+        <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="preview()">👁️ Vista previa</button>
+          <button class="btn btn-primary" onclick="sendNow()">📧 Enviar ahora</button>
+        </div>
+
+        <div class="section">
+          <h2>2. Prográmalo</h2>
+          <label>¿Cada cuándo enviarlo?</label>
+          <select id="freq"></select>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="schedule()">➕ Programar envío automático</button>
+
+          <h2 style="margin-top:24px;">Envíos programados</h2>
+          <div id="schedules"><p class="muted">Cargando…</p></div>
+        </div>
+      </div>
+
+      <!-- Vista previa -->
+      <div>
+        <h2>Vista previa</h2>
+        <div id="preview" class="preview"><p class="muted">Haz clic en “Vista previa” para ver tu reporte.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let ME = null;
+
+    function toast(msg, kind) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'toast show ' + (kind || '');
+      setTimeout(() => (t.className = 'toast'), 3500);
+    }
+
+    function config() {
+      return {
+        title: title.value, period: period.value, summary: summary.value,
+        includePriorities: prio.checked, includeRecommendations: recs.checked,
+        brandName: brand.value, pullEmails: pullEmails.checked,
+        recipients: recipients.value, subject: subject.value,
+      };
+    }
+
+    async function load() {
+      const r = await fetch('/api/me'); ME = await r.json();
+      if (!ME.authenticated) { location.href = '/'; return; }
+      document.getElementById('who').textContent = ME.email;
+      if (ME.demo) document.getElementById('demoBanner').style.display = 'block';
+      const sel = document.getElementById('freq');
+      sel.innerHTML = Object.entries(ME.frequencies)
+        .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+      renderSchedules();
+    }
+
+    function renderSchedules() {
+      const box = document.getElementById('schedules');
+      if (!ME.schedules || !ME.schedules.length) {
+        box.innerHTML = '<p class="muted">Aún no tienes envíos programados.</p>'; return;
+      }
+      box.innerHTML = ME.schedules.map((s) => `
+        <div class="sched-item">
+          <div><span class="pill">${ME.frequencies[s.frequency]?.label || s.frequency}</span>
+          <div class="muted">${(s.config?.title)||'Reporte'} → ${(s.config?.recipients)||'—'}</div></div>
+          <button class="btn btn-ghost" onclick="del('${s.id}')">Eliminar</button>
+        </div>`).join('');
+    }
+
+    async function preview() {
+      const r = await fetch('/api/report/preview', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(config()) });
+      const d = await r.json();
+      if (d.html) document.getElementById('preview').innerHTML = d.html;
+      else toast(d.error || 'Error', 'err');
+    }
+
+    async function sendNow() {
+      const r = await fetch('/api/report/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(config()) });
+      const d = await r.json();
+      if (d.ok) toast(d.demo ? 'Envío simulado (demo) a ' + d.sentTo.join(', ') : 'Enviado a ' + d.sentTo.join(', '), 'ok');
+      else toast(d.error || 'Error', 'err');
+    }
+
+    async function schedule() {
+      const r = await fetch('/api/schedule', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ frequency: freq.value, config: config() }) });
+      const d = await r.json();
+      if (d.ok) { ME.schedules.push(d.schedule); renderSchedules(); toast('Programado ✔', 'ok'); }
+      else toast(d.error || 'Error', 'err');
+    }
+
+    async function del(id) {
+      await fetch('/api/schedule/' + id, { method: 'DELETE' });
+      ME.schedules = ME.schedules.filter((s) => s.id !== id); renderSchedules(); toast('Eliminado', 'ok');
+    }
+
+    async function logout() { await fetch('/api/logout', { method: 'POST' }); location.href = '/'; }
+
+    load();
+  </script>
+</body>
+</html>
