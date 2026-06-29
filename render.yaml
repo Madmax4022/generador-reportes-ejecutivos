@@ -2,6 +2,15 @@
 # Render Blueprint para AutoReport SaaS
 # Render lee este archivo al crear un "Blueprint" desde tu repo de GitHub.
 # Ver guía paso a paso (no técnica): saas/DEPLOY.md
+#
+# >>> Plan FREE (sin tarjeta). Ideal para una demo pública que compartir. <<<
+# Limitaciones del plan free:
+#   - Los datos (usuarios, lista de espera) NO son permanentes: se reinician
+#     cuando la instancia se duerme o se redespliega.
+#   - La instancia "duerme" tras ~15 min de inactividad y tarda ~30-60s en
+#     despertar en la siguiente visita.
+# Para datos permanentes y sin pausas: ver el bloque comentado al final
+# (plan starter + disco persistente, requiere tarjeta ~$7/mes).
 # ========================================
 
 services:
@@ -9,7 +18,7 @@ services:
     name: autoreport-saas
     runtime: node
     rootDir: saas
-    plan: starter            # 'starter' permite disco persistente. 'free' = sin disco (datos efímeros).
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /
@@ -19,9 +28,7 @@ services:
         value: production
       - key: SESSION_SECRET
         generateValue: true   # Render genera un secreto seguro automáticamente
-      - key: DATA_DIR
-        value: /var/data      # carpeta del disco persistente (abajo)
-      # --- Rellenar en el panel de Render (Environment) ---
+      # --- Rellenar en el panel de Render (Environment) cuando quieras lo real ---
       - key: BASE_URL
         sync: false           # ej: https://autoreport-saas.onrender.com
       - key: GOOGLE_CLIENT_ID
@@ -34,7 +41,14 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-    disk:
-      name: autoreport-data
-      mountPath: /var/data
-      sizeGB: 1
+
+# ========================================
+# OPCIÓN PRODUCCIÓN (datos permanentes, sin pausas) — requiere tarjeta:
+# Cambia 'plan: free' por 'plan: starter', agrega 'DATA_DIR=/var/data'
+# en envVars, y añade este bloque dentro del servicio:
+#
+#    disk:
+#      name: autoreport-data
+#      mountPath: /var/data
+#      sizeGB: 1
+# ========================================
