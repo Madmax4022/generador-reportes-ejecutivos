@@ -146,25 +146,29 @@ async function gatherSources(user, cfg, topics) {
 
   if (cfg.pullEmails) {
     if (real) {
-      // Filtra a nivel Gmail por los temas: newer_than:7d ("Canon" OR "CCAP")
+      // Construcción de la búsqueda de Gmail. Clave: el REMITENTE y el PERÍODO
+      // son el filtro fuerte; los TEMAS sirven para ORGANIZAR el reporte (los
+      // usa la IA), no como filtro literal — una frase larga como "Alerta de
+      // consumo tarjeta Master Card" casi nunca aparece textual y dejaría el
+      // reporte vacío. Solo usamos los temas como filtro de Gmail cuando NO hay
+      // remitente, para reducir ruido (ej. "Canon, CCAP" sin un remitente fijo).
       let q = cfg.emailQuery || 'newer_than:7d';
-      if (topics && topics.length) {
+      const hasSender = Boolean(cfg.fromSender && cfg.fromSender.trim());
+      if (hasSender) {
+        q += ' from:(' + cfg.fromSender.trim() + ')';
+      } else if (topics && topics.length) {
         q += ' (' + topics.map((t) => `"${t}"`).join(' OR ') + ')';
       }
-      // Filtra por remitente (ej. el banco): from:(BBVA OR "estado de cuenta@...")
-      if (cfg.fromSender && cfg.fromSender.trim()) {
-        q += ' from:(' + cfg.fromSender.trim() + ')';
-      }
-      // Si pidió leer PDFs, restringe a correos con adjunto y baja los PDFs.
-      if (cfg.readPdfs) q += ' has:attachment';
+      // No forzamos has:attachment: si activó "Leer PDFs" igual aprovechamos el
+      // texto de los correos sin adjunto (ej. notificaciones de transacciones).
       try {
-        emails = await google.recentEmails(user.tokens, q, 20, { includePdfs: Boolean(cfg.readPdfs) });
+        emails = await google.recentEmails(user.tokens, q, 40, { includePdfs: Boolean(cfg.readPdfs) });
       } catch (e) {
         console.error('gather emails/pdfs failed:', e.stack || e.message);
         // No tirar todo el reporte: si falló leyendo PDFs, reintenta sin ellos.
         if (cfg.readPdfs) {
           try {
-            emails = await google.recentEmails(user.tokens, q, 20, { includePdfs: false });
+            emails = await google.recentEmails(user.tokens, q, 40, { includePdfs: false });
           } catch (_) { emails = []; }
         }
         sections.push({
