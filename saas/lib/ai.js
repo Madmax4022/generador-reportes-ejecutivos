@@ -17,9 +17,11 @@ try {
   AnthropicLib = null;
 }
 
-// Modelo por defecto: Sonnet 4.6 (buena calidad, ~40% más barato que Opus).
-// Para máximo ahorro: ANTHROPIC_MODEL=claude-haiku-4-5 (~80% más barato).
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+// Modelo por defecto: Haiku 4.5 (el más barato y rápido; suficiente para
+// extraer/resumir correos y estados de cuenta). Para más calidad de redacción:
+//   ANTHROPIC_MODEL=claude-sonnet-4-6   (mejor prosa, ~3× más caro)
+//   ANTHROPIC_MODEL=claude-opus-4-8     (máxima calidad, ~5× más caro)
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 
 function isConfigured() {
   return Boolean(process.env.ANTHROPIC_API_KEY && AnthropicLib);
@@ -157,7 +159,14 @@ async function generateReportContent(input) {
       source: { type: 'base64', media_type: 'application/pdf', data: pdf.data },
     });
   }
-  userContent.push({ type: 'text', text: buildPrompt(input) });
+  // Caché de prompt: marca el final del contenido como punto de caché. Si se
+  // repite la misma petición en ~5 min (ej. Vista previa y luego Enviar/Programar),
+  // Claude reutiliza lo ya procesado con ~90% de descuento en tokens de entrada.
+  userContent.push({
+    type: 'text',
+    text: buildPrompt(input),
+    cache_control: { type: 'ephemeral' },
+  });
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 3000,
