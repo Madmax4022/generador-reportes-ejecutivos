@@ -67,9 +67,10 @@
         <input id="subject" value="Reporte Ejecutivo" />
 
         <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-ghost" onclick="preview()">👁️ Vista previa</button>
-          <button class="btn btn-primary" onclick="sendNow()">📧 Enviar ahora</button>
+          <button class="btn btn-ghost" id="previewBtn" onclick="preview()">👁️ Vista previa</button>
+          <button class="btn btn-primary" id="sendBtn" onclick="sendNow()">📧 Enviar ahora</button>
         </div>
+        <div id="sendStatus" style="display:none; margin-top:14px; padding:12px 14px; border-radius:8px; font-weight:600;"></div>
 
         <div class="section">
           <h2>2. Prográmalo</h2>
@@ -172,11 +173,43 @@
       else toast((d.error || 'Error') + (d.detail ? ': ' + d.detail : ''), 'err');
     }
 
+    function setSendStatus(msg, kind) {
+      const el = document.getElementById('sendStatus');
+      el.style.display = 'block';
+      el.innerHTML = msg;
+      if (kind === 'ok') { el.style.background = '#e7f7ec'; el.style.color = '#1a7f3c'; el.style.border = '1px solid #b7e4c7'; }
+      else if (kind === 'err') { el.style.background = '#fdecec'; el.style.color = '#a33'; el.style.border = '1px solid #f5c6cb'; }
+      else { el.style.background = '#eef'; el.style.color = '#3a3a55'; el.style.border = '1px solid #cfd0f5'; }
+    }
+
     async function sendNow() {
-      const r = await fetch('/api/report/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(config()) });
-      const d = await r.json();
-      if (d.ok) toast(d.demo ? 'Envío simulado (demo) a ' + d.sentTo.join(', ') : 'Enviado a ' + d.sentTo.join(', '), 'ok');
-      else toast((d.error || 'Error') + (d.detail ? ': ' + d.detail : ''), 'err');
+      const btn = document.getElementById('sendBtn');
+      const original = btn.textContent;
+      btn.disabled = true; btn.textContent = '⏳ Enviando…';
+      setSendStatus('⏳ Enviando el reporte… (puede tardar unos segundos)', 'info');
+      try {
+        const r = await fetch('/api/report/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(config()) });
+        const d = await r.json();
+        if (d.ok) {
+          const hora = new Date().toLocaleString('es-ES');
+          const dest = d.sentTo.join(', ');
+          if (d.demo) {
+            setSendStatus('✅ <strong>Envío simulado (modo demo)</strong> a ' + dest + '<br><span style="font-weight:400;">' + hora + ' — en modo real llegaría a la bandeja del destinatario.</span>', 'ok');
+            toast('Envío simulado (demo)', 'ok');
+          } else {
+            setSendStatus('✅ <strong>¡Reporte enviado!</strong> a ' + dest + '<br><span style="font-weight:400;">' + hora + ' — revisa también tu carpeta de Enviados en Gmail.</span>', 'ok');
+            toast('Enviado a ' + dest, 'ok');
+          }
+        } else {
+          setSendStatus('❌ <strong>No se pudo enviar.</strong> ' + (d.error || '') + (d.detail ? ': ' + d.detail : ''), 'err');
+          toast(d.error || 'Error', 'err');
+        }
+      } catch (e) {
+        setSendStatus('❌ <strong>No se pudo enviar.</strong> Revisa tu conexión e inténtalo de nuevo.', 'err');
+        toast('Error de red', 'err');
+      } finally {
+        btn.disabled = false; btn.textContent = original;
+      }
     }
 
     async function schedule() {
