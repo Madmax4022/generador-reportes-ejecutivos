@@ -1,0 +1,570 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                  GENERADOR DE REPORTES EJECUTIVOS                         ║
+║                   LISTA COMPLETA DE ARCHIVOS                              ║
+║                                                                            ║
+║                        Proyecto v1.0.0 - Junio 2026                       ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📂 ESTRUCTURA DEL PROYECTO
+═════════════════════════════════════════════════════════════════════════════
+
+generador-reportes/
+│
+├─── 🎨 INTERFAZ WEB (30 KB)
+│    │
+│    └─ ReporteExecutivo.html                        ⭐ COMIENZA AQUÍ
+│       ├─ Interfaz visual completa
+│       ├─ Gestión de fuentes de datos
+│       ├─ Configuración de reportes
+│       ├─ Vista previa en tiempo real
+│       ├─ Envío/descarga de reportes
+│       └─ Sin necesidad de servidor
+│
+├─── 🖥️ BACKEND / SERVIDOR (15 KB)
+│    │
+│    ├─ backend-server.js                           
+│    │  ├─ API REST con Express.js
+│    │  ├─ Integración con Google APIs (Gmail, Drive, Sheets)
+│    │  ├─ Endpoints de extracción de datos
+│    │  ├─ Generación de reportes HTML
+│    │  ├─ Envío de correos automático
+│    │  ├─ Manejo de errores
+│    │  └─ Logging y monitoreo
+│    │
+│    ├─ package.json                                (1.1 KB)
+│    │  ├─ express (framework web)
+│    │  ├─ googleapis (APIs de Google)
+│    │  ├─ nodemailer (envío de emails)
+│    │  ├─ node-cron (tareas programadas)
+│    │  ├─ cors (seguridad)
+│    │  ├─ uuid (IDs únicos)
+│    │  ├─ dotenv (variables de entorno)
+│    │  └─ helmet (seguridad HTTP)
+│    │
+│    └─ .env.example                                (3.2 KB)
+│       ├─ GOOGLE_CLIENT_ID
+│       ├─ GOOGLE_CLIENT_SECRET
+│       ├─ GOOGLE_REDIRECT_URL
+│       ├─ GOOGLE_PROJECT_ID
+│       ├─ EMAIL_USER
+│       ├─ EMAIL_PASSWORD
+│       ├─ SESSION_SECRET
+│       ├─ PORT
+│       └─ Otras configuraciones
+│
+├─── 📚 DOCUMENTACIÓN (60+ KB)
+│    │
+│    ├─ README.md                                   (9.8 KB) ⭐ LEE PRIMERO
+│    │  ├─ Resumen ejecutivo
+│    │  ├─ Quick start (5 minutos)
+│    │  ├─ Estructura del proyecto
+│    │  ├─ Instalación completa (15 minutos)
+│    │  ├─ Casos de uso
+│    │  ├─ Integración con sistemas
+│    │  ├─ Ejemplos de API
+│    │  ├─ Automatización
+│    │  ├─ Seguridad
+│    │  ├─ Características
+│    │  ├─ Documentación links
+│    │  ├─ Solución de problemas
+│    │  ├─ Despliegue
+│    │  ├─ Roadmap futuro
+│    │  └─ Licencia
+│    │
+│    ├─ RESUMEN_EJECUTIVO.txt                       (14 KB) 📋 GUÍA VISUAL
+│    │  ├─ ¿Qué es? (explicación simple)
+│    │  ├─ Casos de uso principales
+│    │  ├─ Inicio rápido (3 opciones)
+│    │  ├─ Archivos del proyecto
+│    │  ├─ Flujo de trabajo (diagrama ASCII)
+│    │  ├─ Ejemplo de reporte final
+│    │  ├─ Instalación paso a paso
+│    │  ├─ Interfaz principal (diagrama)
+│    │  ├─ Automatización (Linux, Windows, Cloud)
+│    │  ├─ Comparación: Con vs Sin
+│    │  ├─ Tips y trucos
+│    │  ├─ Recursos útiles
+│    │  ├─ Soporte
+│    │  ├─ Checklist
+│    │  └─ Próximos pasos
+│    │
+│    ├─ INSTALACION.md                              (12 KB) 🚀 PASO A PASO
+│    │  ├─ Requisitos previos
+│    │  ├─ Verificar instalación
+│    │  ├─ Configuración de Google Cloud (detallado)
+│    │  │  ├─ Crear proyecto
+│    │  │  ├─ Habilitar APIs
+│    │  │  ├─ Crear credenciales OAuth
+│    │  │  └─ Descargar credentials.json
+│    │  ├─ Instalación local (paso a paso)
+│    │  ├─ Configuración del servidor
+│    │  ├─ Autenticación con Google
+│    │  ├─ Primeras pruebas (curl examples)
+│    │  ├─ Acceder a interfaz web
+│    │  ├─ Despliegue en producción
+│    │  │  ├─ Heroku
+│    │  │  ├─ AWS Lambda
+│    │  │  ├─ Docker
+│    │  │  └─ VPS (DigitalOcean, Linode)
+│    │  └─ Solución de problemas comunes
+│    │
+│    ├─ GUIA_INTEGRACION.md                         (12 KB) 📖 TÉCNICA
+│    │  ├─ Descripción general
+│    │  ├─ Características principales
+│    │  ├─ Cómo usar (paso a paso)
+│    │  │  ├─ Agregar fuentes (Gmail/Drive/Sheets)
+│    │  │  ├─ Configurar reporte
+│    │  │  ├─ Generar vista previa
+│    │  │  └─ Enviar reporte
+│    │  ├─ Casos de uso prácticos (3 ejemplos)
+│    │  ├─ Integración avanzada con APIs
+│    │  │  ├─ Node.js/JavaScript
+│    │  │  ├─ Python + Flask
+│    │  │  └─ Google Apps Script
+│    │  ├─ Requisitos de seguridad
+│    │  ├─ Ejemplos de salida (HTML)
+│    │  ├─ Instalación local
+│    │  ├─ Workflow recomendado
+│    │  ├─ Filtros Gmail (referencia)
+│    │  ├─ Solución de problemas
+│    │  ├─ Soporte
+│    │  └─ Changelog versiones
+│    │
+│    ├─ AUTOMATIZACION.md                           (12 KB) ⏰ SCHEDULING
+│    │  ├─ Cron Jobs (Linux/macOS)
+│    │  │  ├─ Sintaxis y ejemplos
+│    │  │  ├─ Acceder a crontab
+│    │  │  ├─ Ejemplos: diario, semanal, mensual
+│    │  │  ├─ Archivo ejecutable JavaScript
+│    │  │  └─ Ver logs
+│    │  ├─ Windows Task Scheduler
+│    │  │  ├─ Crear tarea
+│    │  │  ├─ PowerShell script
+│    │  │  └─ Listar/gestionar tareas
+│    │  ├─ Google Cloud Scheduler
+│    │  │  ├─ Configurar job
+│    │  │  ├─ Ejemplo YAML
+│    │  │  └─ Monitoreo
+│    │  ├─ Node.js con node-cron
+│    │  │  ├─ Implementación en servidor
+│    │  │  └─ Patrones útiles
+│    │  ├─ Tabla comparativa
+│    │  ├─ Monitoreo de tareas
+│    │  ├─ Logging centralizado
+│    │  ├─ Checklist
+│    │  └─ Documentación de schedule
+│    │
+│    ├─ INDICE.md                                   (10 KB) 📑 ÍNDICE
+│    │  ├─ Estructura del proyecto
+│    │  ├─ Por dónde empezar (3 opciones)
+│    │  ├─ Guía de documentos (descripción)
+│    │  ├─ Flujo de inicio (6 niveles)
+│    │  ├─ Casos de uso → documentos
+│    │  ├─ Estadísticas del proyecto
+│    │  ├─ Checklist de verificación
+│    │  ├─ Referencias rápidas
+│    │  ├─ Estado del proyecto
+│    │  ├─ Recursos de aprendizaje
+│    │  └─ Notas importantes
+│    │
+│    └─ LISTA_ARCHIVOS.txt                          (Este archivo)
+│       └─ Descripción detallada de cada archivo
+│
+├─── 🔧 CONFIGURACIÓN Y SEGURIDAD
+│    │
+│    ├─ credentials.json                           (DESCARGA DE GOOGLE)
+│    │  ├─ OAuth 2.0 credentials
+│    │  ├─ No incluido en el repo
+│    │  ├─ Obtener en: console.cloud.google.com
+│    │  └─ ⚠️ NUNCA subir a Git
+│    │
+│    ├─ .env                                        (CREAR LOCALMENTE)
+│    │  ├─ Variables de entorno
+│    │  ├─ Copia de .env.example
+│    │  ├─ Rellenar con valores reales
+│    │  └─ ⚠️ NUNCA subir a Git
+│    │
+│    └─ .gitignore                                  (EVITAR SUBIDAS)
+│       ├─ .env
+│       ├─ credentials.json
+│       ├─ node_modules/
+│       ├─ .env.local
+│       └─ Otros archivos sensibles
+│
+└─── 📊 ESTADÍSTICAS Y MÉTRICAS
+     │
+     ├─ Archivos totales: 9
+     ├─ Código fuente (JS): 1 (backend-server.js)
+     ├─ Archivos de configuración: 2 (.env.example + package.json)
+     ├─ Documentación: 6 archivos (60+ KB)
+     ├─ Interfaz web: 1 archivo (30 KB)
+     ├─ Tamaño total: ~120 KB
+     ├─ Líneas de código: ~2,500
+     ├─ Líneas de documentación: ~2,000
+     ├─ APIs soportadas: 3+ (Gmail, Drive, Sheets)
+     ├─ Endpoints HTTP: 6+
+     ├─ Módulos NPM: 8+
+     └─ Versión actual: 1.0.0 ✅
+
+
+═════════════════════════════════════════════════════════════════════════════
+📖 DESCRIPCIÓN DETALLADA DE ARCHIVOS
+═════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ReporteExecutivo.html (30 KB)                          [INTERFAZ WEB]   │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│ ⭐ COMIENZA AQUÍ - Abre directamente en el navegador                    │
+│                                                                           │
+│ CONTENIDO:                                                              │
+│  • Interfaz HTML/CSS/JavaScript completa                              │
+│  • Sistema de pestañas para diferentes tipos de fuentes               │
+│  • Formularios para configurar reportes                               │
+│  • Vista previa en tiempo real                                        │
+│  • Botones para enviar, descargar, etc.                               │
+│  • Estilos profesionales con gradientes y animaciones                 │
+│  • Responsive (funciona en móvil y desktop)                           │
+│                                                                           │
+│ CARACTERÍSTICAS:                                                        │
+│  ✅ Agregar fuentes Gmail (con filtros)                               │
+│  ✅ Agregar fuentes Drive (documentos)                                │
+│  ✅ Agregar fuentes Sheets (datos)                                    │
+│  ✅ Agregar contenido manual                                           │
+│  ✅ Configurar título, período, resumen                               │
+│  ✅ Incluir gráficos, prioridades, recomendaciones                    │
+│  ✅ Vista previa en tiempo real                                        │
+│  ✅ Exportar a HTML                                                    │
+│  ✅ Simulación de envío por correo                                     │
+│                                                                           │
+│ NOTA: Para integración real con Google, necesita backend               │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ backend-server.js (15 KB)                            [SERVIDOR NODE.JS] │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│ CONTENIDO:                                                              │
+│  • Servidor Express.js                                                 │
+│  • Autenticación OAuth 2.0 con Google                                 │
+│  • Integración con Google APIs                                         │
+│  • Endpoints REST para extraer datos                                  │
+│  • Generación de reportes HTML                                        │
+│  • Envío de correos automático                                        │
+│  • Guardado en Google Drive                                           │
+│  • Manejo de errores y logging                                        │
+│                                                                           │
+│ ENDPOINTS (APIs):                                                      │
+│  POST /auth/google               - Iniciar OAuth                       │
+│  GET /auth/google/callback       - Callback OAuth                      │
+│  POST /api/extract/gmail         - Extraer correos                     │
+│  POST /api/extract/drive         - Extraer documentos                  │
+│  POST /api/extract/sheets        - Extraer datos                       │
+│  POST /api/generate-report       - Generar reporte                     │
+│  POST /api/send-report           - Enviar por correo                   │
+│  GET /health                     - Estado del servidor                 │
+│                                                                           │
+│ REQUISITOS:                                                            │
+│  • Node.js 14+                                                         │
+│  • Credenciales OAuth de Google                                       │
+│  • Módulos NPM (package.json)                                         │
+│  • Variables de entorno (.env)                                        │
+│                                                                           │
+│ USO:                                                                    │
+│  npm install      - Instalar dependencias                             │
+│  npm start        - Iniciar servidor (producción)                     │
+│  npm run dev      - Iniciar con nodemon (desarrollo)                  │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ package.json (1.1 KB)                           [DEPENDENCIAS NPM]      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│ CONTENIDO:                                                              │
+│  • Información del proyecto                                            │
+│  • Versión: 1.0.0                                                      │
+│  • Scripts de ejecución                                               │
+│  • Dependencias de producción:                                         │
+│    - express (4.18.2)                                                 │
+│    - googleapis (118.0.0)                                             │
+│    - nodemailer (6.9.3)                                               │
+│    - dotenv (16.3.1)                                                  │
+│    - cors (2.8.5)                                                      │
+│    - uuid (9.0.0)                                                      │
+│    - body-parser (1.20.2)                                             │
+│    - express-session (1.17.3)                                         │
+│    - helmet (7.0.0)                                                    │
+│  • Dependencias de desarrollo:                                         │
+│    - nodemon (3.0.1)                                                  │
+│    - jest (29.5.0)                                                     │
+│    - eslint (8.44.0)                                                   │
+│  • Motores: Node.js 14+, npm 6+                                       │
+│                                                                           │
+│ USO:                                                                    │
+│  npm install        - Instalar todas las dependencias                 │
+│  npm start          - Ejecutar servidor                               │
+│  npm run dev        - Ejecutar con nodemon                            │
+│  npm test           - Ejecutar tests                                   │
+│  npm run lint       - Validar código                                   │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ .env.example (3.2 KB)                         [PLANTILLA DE CONFIG]     │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│ CONTENIDO:                                                              │
+│  • Plantilla de variables de entorno                                   │
+│  • Comentarios explicativos                                            │
+│  • Instrucciones para obtener credenciales                            │
+│                                                                           │
+│ VARIABLES IMPORTANTES:                                                 │
+│  • GOOGLE_CLIENT_ID - Tu OAuth client ID                              │
+│  • GOOGLE_CLIENT_SECRET - Tu OAuth client secret                      │
+│  • GOOGLE_REDIRECT_URL - URL de callback                              │
+│  • GOOGLE_PROJECT_ID - ID del proyecto en Google Cloud               │
+│  • EMAIL_USER - Email para enviar reportes                            │
+│  • EMAIL_PASSWORD - Contraseña de aplicación                          │
+│  • SESSION_SECRET - Secret para sesiones                              │
+│  • PORT - Puerto del servidor (default: 3000)                        │
+│  • NODE_ENV - Ambiente (development/production)                       │
+│                                                                           │
+│ USO:                                                                    │
+│  cp .env.example .env         - Copiar plantilla                      │
+│  nano .env                    - Editar con valores reales             │
+│  ⚠️ NUNCA subir .env a Git                                             │
+│                                                                           │
+│ INSTRUCCIONES:                                                         │
+│  1. Copiar este archivo a .env                                        │
+│  2. Rellenar con valores reales de Google Cloud                       │
+│  3. Guardar (no compartir)                                             │
+│  4. El servidor lo cargará automáticamente                            │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+═════════════════════════════════════════════════════════════════════════════
+📚 DOCUMENTACIÓN COMPLETA
+═════════════════════════════════════════════════════════════════════════════
+
+README.md (9.8 KB)
+  • Guía principal del proyecto
+  • Qué resuelve el sistema
+  • Quick start de 5 minutos
+  • Instalación completa de 15 minutos
+  • Casos de uso prácticos
+  • Integración con sistemas
+  • Ejemplos de uso de APIs
+  • Automatización
+  • Seguridad
+  • Características
+  • Links a documentación
+  • Solución de problemas
+  • Despliegue
+  • Licencia
+  • TIEMPO DE LECTURA: 5-10 minutos
+
+RESUMEN_EJECUTIVO.txt (14 KB)
+  • Guía visual y rápida en español
+  • Explicación simple del proyecto
+  • 3 Casos de uso principales
+  • 2 Opciones de inicio rápido
+  • Archivos y estructura
+  • Flujo de trabajo (diagrama ASCII)
+  • Ejemplo de reporte final
+  • Instalación paso a paso
+  • Diagrama de interfaz
+  • Automatización (3 métodos)
+  • Comparación: Con vs Sin
+  • Tips y trucos
+  • Recursos útiles
+  • Soporte
+  • Checklist
+  • TIEMPO DE LECTURA: 10-15 minutos
+
+INSTALACION.md (12 KB)
+  • Requisitos previos
+  • Verificación de instalación
+  • Configuración de Google Cloud (DETALLADO)
+    - Crear proyecto
+    - Habilitar APIs
+    - Crear credenciales OAuth
+    - Descargar credentials.json
+  • Instalación local
+  • Configuración del servidor
+  • Autenticación
+  • Primeras pruebas (con ejemplos curl)
+  • Acceso a interfaz web
+  • Despliegue en producción (4 opciones)
+  • Solución de problemas comunes
+  • TIEMPO DE LECTURA: 20-30 minutos (+ implementación)
+
+GUIA_INTEGRACION.md (12 KB)
+  • Descripción general completa
+  • Características principales
+  • Cómo usar (paso a paso)
+    - Agregar fuentes
+    - Configurar reporte
+    - Generar vista previa
+    - Enviar reporte
+  • Casos de uso prácticos (3 ejemplos)
+  • Integración avanzada (3 lenguajes)
+    - Node.js/JavaScript
+    - Python + Flask
+    - Google Apps Script
+  • Requisitos de seguridad
+  • Ejemplos de salida (HTML)
+  • Instalación local
+  • Workflow recomendado
+  • Filtros Gmail (referencia)
+  • Solución de problemas
+  • Changelog de versiones
+  • TIEMPO DE LECTURA: 30-40 minutos
+
+AUTOMATIZACION.md (12 KB)
+  • Cron Jobs (Linux/macOS)
+    - Sintaxis y ejemplos
+    - Ejemplos: diario, semanal, mensual
+    - Archivo ejecutable JavaScript
+  • Windows Task Scheduler
+    - Crear tarea
+    - PowerShell script
+  • Google Cloud Scheduler
+    - Configurar job
+    - Ejemplo YAML
+  • Node.js con node-cron
+    - Implementación
+    - Patrones útiles
+  • Tabla comparativa
+  • Monitoreo y alertas
+  • Logging centralizado
+  • Checklist
+  • TIEMPO DE LECTURA: 20-25 minutos
+
+INDICE.md (10 KB)
+  • Estructura completa del proyecto
+  • Por dónde empezar (3 opciones)
+  • Descripción detallada de cada archivo
+  • Flujo de inicio (6 niveles)
+  • Casos de uso → documentos
+  • Estadísticas del proyecto
+  • Checklist de verificación rápida
+  • Referencias rápidas
+  • Estado del proyecto
+  • Recursos de aprendizaje
+  • Notas importantes
+  • TIEMPO DE LECTURA: 10-15 minutos
+
+
+═════════════════════════════════════════════════════════════════════════════
+🚀 CÓMO EMPEZAR
+═════════════════════════════════════════════════════════════════════════════
+
+OPCIÓN A: Solo Interfaz (SIN instalación)
+  1. Abre: ReporteExecutivo.html en navegador
+  2. Agrega: Contenido manual
+  3. Descarga: Como HTML
+  ⏱️ TIEMPO: 5 minutos
+  ⚠️ LIMITADO: Sin acceso a Gmail/Drive/Sheets
+
+OPCIÓN B: Con Servidor (RECOMENDADO)
+  1. Lee: README.md + RESUMEN_EJECUTIVO.txt (15 min)
+  2. Sigue: INSTALACION.md (20 min)
+  3. Obtén: Credenciales Google (10 min)
+  4. Ejecuta: npm install && npm start (5 min)
+  5. Usa: ReporteExecutivo.html (SIN límites)
+  ⏱️ TIEMPO: 50 minutos
+  ✅ COMPLETO: Acceso a todas las APIs
+
+OPCIÓN C: Producción (AVANZADO)
+  1. Completa Opción B
+  2. Lee: AUTOMATIZACION.md (20 min)
+  3. Configura: Cron/Scheduler (20 min)
+  4. Despliega: En servidor (30 min)
+  5. Prueba: Ejecución automática (15 min)
+  ⏱️ TIEMPO: 2-3 horas
+  🚀 PRODUCCIÓN: Reportes automáticos diarios/semanales
+
+
+═════════════════════════════════════════════════════════════════════════════
+✅ LISTA DE VERIFICACIÓN RÁPIDA
+═════════════════════════════════════════════════════════════════════════════
+
+ANTES DE EMPEZAR
+  ☐ Descargar todos los archivos
+  ☐ Leer este documento (LISTA_ARCHIVOS.txt)
+  ☐ Leer README.md (5 minutos)
+
+INSTALACIÓN BÁSICA
+  ☐ Instalar Node.js
+  ☐ Ejecutar: npm install
+  ☐ Crear: archivo .env
+  ☐ Obtener: credenciales Google
+  ☐ Rellenar: .env con valores reales
+  ☐ Ejecutar: npm start
+
+PRIMEROS REPORTES
+  ☐ Abre: http://localhost:3000
+  ☐ Conecta: Con tu cuenta Google
+  ☐ Agrega: Primera fuente de datos
+  ☐ Genera: Reporte
+  ☐ Envía: O descarga HTML
+
+AUTOMATIZACIÓN (OPCIONAL)
+  ☐ Lee: AUTOMATIZACION.md
+  ☐ Elige: Método (Cron/Scheduler/Cloud)
+  ☐ Configura: Trigger/cronograma
+  ☐ Prueba: Ejecución automática
+  ☐ Verifica: Logs y alertas
+
+PRODUCCIÓN (OPCIONAL)
+  ☐ Lee: INSTALACION.md (sección Despliegue)
+  ☐ Elige: Plataforma (Heroku/AWS/VPS/Docker)
+  ☐ Configura: HTTPS y dominio
+  ☐ Sube: Código
+  ☐ Prueba: En ambiente productivo
+
+
+═════════════════════════════════════════════════════════════════════════════
+📞 SOPORTE Y CONTACTO
+═════════════════════════════════════════════════════════════════════════════
+
+DOCUMENTACIÓN
+  • README.md - Guía principal
+  • RESUMEN_EJECUTIVO.txt - Guía visual
+  • INSTALACION.md - Pasos de instalación
+  • GUIA_INTEGRACION.md - Uso técnico
+  • AUTOMATIZACION.md - Programación
+  • INDICE.md - Índice completo
+
+RECURSOS
+  • Google Cloud Console: https://console.cloud.google.com/
+  • Gmail API: https://developers.google.com/gmail
+  • Drive API: https://developers.google.com/drive
+  • Sheets API: https://developers.google.com/sheets
+  • Node.js: https://nodejs.org/
+
+PROBLEMAS
+  • Solución de problemas: INSTALACION.md
+  • Troubleshooting técnico: GUIA_INTEGRACION.md
+  • Contacto: soporte@empresa.com
+
+
+═════════════════════════════════════════════════════════════════════════════
+
+✨ ¡TODO ESTÁ LISTO PARA EMPEZAR! ✨
+
+Comienza con: README.md
+Luego lee: RESUMEN_EJECUTIVO.txt
+Para instalar: INSTALACION.md
+
+Versión: 1.0.0 ✅
+Estado: Production Ready
+Última actualización: 28/06/2026
+
+═════════════════════════════════════════════════════════════════════════════
