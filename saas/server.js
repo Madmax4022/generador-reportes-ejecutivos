@@ -46,13 +46,17 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), (req, re
   res.json({ received: true });
 });
 
+const PROD = process.env.NODE_ENV === 'production';
+// Detrás del proxy HTTPS de Render/Railway: necesario para cookies seguras.
+if (PROD) app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '1mb' }));
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
+    cookie: { maxAge: 1000 * 60 * 60 * 24 * 7, secure: PROD, sameSite: 'lax' },
   })
 );
 app.use(express.static(path.join(__dirname, 'public')));

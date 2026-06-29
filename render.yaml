@@ -1,0 +1,40 @@
+# ========================================
+# Render Blueprint para AutoReport SaaS
+# Render lee este archivo al crear un "Blueprint" desde tu repo de GitHub.
+# Ver guía paso a paso (no técnica): saas/DEPLOY.md
+# ========================================
+
+services:
+  - type: web
+    name: autoreport-saas
+    runtime: node
+    rootDir: saas
+    plan: starter            # 'starter' permite disco persistente. 'free' = sin disco (datos efímeros).
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true   # Render genera un secreto seguro automáticamente
+      - key: DATA_DIR
+        value: /var/data      # carpeta del disco persistente (abajo)
+      # --- Rellenar en el panel de Render (Environment) ---
+      - key: BASE_URL
+        sync: false           # ej: https://autoreport-saas.onrender.com
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+    disk:
+      name: autoreport-data
+      mountPath: /var/data
+      sizeGB: 1
