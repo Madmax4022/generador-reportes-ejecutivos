@@ -21,6 +21,8 @@
       Los envíos son simulados. Para activar Google real, el operador agrega credenciales en <code>.env</code>.
     </div>
 
+    <div id="billingBanner" class="banner" style="display:none; background:#eef; border-color:#cfd0f5; color:#3a3a55;"></div>
+
     <div class="row section">
       <!-- Configuración -->
       <div>
@@ -93,10 +95,37 @@
       if (!ME.authenticated) { location.href = '/'; return; }
       document.getElementById('who').textContent = ME.email;
       if (ME.demo) document.getElementById('demoBanner').style.display = 'block';
+      renderBilling();
       const sel = document.getElementById('freq');
       sel.innerHTML = Object.entries(ME.frequencies)
         .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
       renderSchedules();
+    }
+
+    function renderBilling() {
+      const b = ME.billing || {};
+      const el = document.getElementById('billingBanner');
+      if (b.status === 'active') {
+        el.style.display = 'block';
+        el.innerHTML = '✅ <strong>Suscripción activa.</strong> ¡Gracias! Tienes acceso completo.';
+      } else if (b.status === 'trialing') {
+        el.style.display = 'block';
+        el.innerHTML = `⏳ <strong>Prueba gratis:</strong> te quedan <strong>${b.trialDaysLeft} día(s)</strong>. ` +
+          `<button class="btn btn-primary" style="padding:6px 14px;margin-left:8px;" onclick="upgrade()">Suscribirme</button>`;
+      } else {
+        el.style.display = 'block';
+        el.style.background = '#fdecec'; el.style.borderColor = '#f5c6cb'; el.style.color = '#a33';
+        el.innerHTML = `🔒 <strong>Tu prueba terminó.</strong> Suscríbete para seguir enviando reportes. ` +
+          `<button class="btn btn-primary" style="padding:6px 14px;margin-left:8px;" onclick="upgrade()">Suscribirme</button>`;
+      }
+    }
+
+    async function upgrade() {
+      const r = await fetch('/api/billing/checkout', { method: 'POST' });
+      const d = await r.json();
+      if (d.url) { location.href = d.url; return; }       // Stripe real
+      if (d.ok) { toast(d.message || 'Suscripción activada', 'ok'); ME.billing.status = 'active'; renderBilling(); }
+      else toast(d.error || 'Error', 'err');
     }
 
     function renderSchedules() {

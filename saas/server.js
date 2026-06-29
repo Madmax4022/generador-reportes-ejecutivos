@@ -1,8 +1,9 @@
 // ========================================
-// AutoReport SaaS - Servidor (MVP Fase 1)
+// AutoReport SaaS - Servidor (MVP Fases 1 + 3)
 // - Login "Conectar con Google" (OAuth hospedado, multi-cliente)
-// - Modo demo automático si no hay credenciales de Google
+// - Prueba gratis de 14 días + suscripción Stripe (modo demo si no hay claves)
 // - Generar / enviar reportes y programarlos (semanal/mensual/diario)
+// - Lista de espera para validar demanda
 // ========================================
 
 require('dotenv').config();
@@ -14,11 +15,36 @@ const cron = require('node-cron');
 
 const store = require('./lib/store');
 const google = require('./lib/google');
+const billing = require('./lib/billing');
 const { generateReportHTML } = require('./lib/report');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const DEMO = !google.isConfigured();
+const BILLING_DEMO = !billing.isConfigured();
+
+// --- Webhook de Stripe: necesita el body crudo, así que va ANTES de express.json ---
+app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), (req, res) => {
+  if (BILLING_DEMO) return res.json({ received: true, demo: true });
+  let event;
+  try {
+    event = billing.verifyEvent(req.body, req.headers['stripe-signature']);
+  } catch (e) {
+    console.error('Webhook signature error:', e.message);
+    return res.status(400).send(`Webhook Error: ${e.message}`);
+  }
+  if (event.type === 'checkout.session.completed') {
+    const s = event.data.object;
+    const user = store.getUser(s.client_reference_id);
+    if (user) store.upsertUser({ id: user.id, plan: 'active', stripeCustomerId: s.customer, stripeSubscriptionId: s.subscription });
+  } else if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object;
+    const user = store.findUserByStripeCustomer(sub.customer);
+    if (user) store.upsertUser({ id: user.id, plan: 'canceled' });
+  }
+  res.json({ received: true });
+});
 
 app.use(express.json({ limit: '1mb' }));
 app.use(
@@ -39,8 +65,27 @@ function requireLogin(req, res, next) {
 function currentUser(req) {
   return req.session.userId ? store.getUser(req.session.userId) : null;
 }
+// Da de alta valores por defecto (prueba de 14 días) si el usuario es nuevo.
+function ensureDefaults(user) {
+  if (!user.trialEndsAt) {
+    user = store.upsertUser({
+      id: user.id,
+      plan: user.plan || 'trial',
+      trialEndsAt: new Date(Date.now() + billing.TRIAL_DAYS * 86400000).toISOString(),
+    });
+  }
+  return user;
+}
+// Bloquea acciones de pago (enviar/programar) si la prueba expiró y no hay suscripción.
+function requireAccess(req, res, next) {
+  const user = currentUser(req);
+  const st = billing.accessStatus(user);
+  if (!st.allowed) {
+    return res.status(402).json({ error: 'Tu prueba terminó. Suscríbete para seguir enviando reportes.', needsUpgrade: true });
+  }
+  next();
+}
 
-// Frecuencias amigables -> expresión cron (lenguaje no técnico en la UI)
 const FREQUENCIES = {
   daily: { label: 'Todos los días (9:00 AM)', cron: '0 9 * * *' },
   weekly: { label: 'Cada lunes (8:00 AM)', cron: '0 8 * * 1' },
@@ -52,9 +97,9 @@ const FREQUENCIES = {
 // ========================================
 app.get('/auth/google', (req, res) => {
   if (DEMO) {
-    // Modo demo: crea un usuario ficticio para poder ver el producto sin setup.
     const id = 'demo-user';
-    store.upsertUser({ id, email: 'demo@empresa.com', name: 'Usuario Demo', demo: true });
+    let user = store.upsertUser({ id, email: 'demo@empresa.com', name: 'Usuario Demo', demo: true });
+    ensureDefaults(user);
     req.session.userId = id;
     return res.redirect('/app');
   }
@@ -64,9 +109,9 @@ app.get('/auth/google', (req, res) => {
 app.get('/auth/google/callback', async (req, res) => {
   try {
     const { tokens, profile } = await google.exchangeCode(req.query.code);
-    const id = profile.id;
-    store.upsertUser({ id, email: profile.email, name: profile.name, picture: profile.picture, tokens });
-    req.session.userId = id;
+    let user = store.upsertUser({ id: profile.id, email: profile.email, name: profile.name, picture: profile.picture, tokens });
+    ensureDefaults(user);
+    req.session.userId = profile.id;
     res.redirect('/app');
   } catch (e) {
     console.error('OAuth callback error:', e.message);
@@ -79,11 +124,22 @@ app.post('/api/logout', (req, res) => {
 });
 
 // ========================================
+// LISTA DE ESPERA (pública - validación de demanda)
+// ========================================
+app.post('/api/waitlist', (req, res) => {
+  const email = (req.body.email || '').trim();
+  if (!/.+@.+\..+/.test(email)) return res.status(400).json({ error: 'Email no válido' });
+  store.addWaitlist({ email, at: new Date().toISOString() });
+  res.json({ ok: true });
+});
+
+// ========================================
 // API
 // ========================================
 app.get('/api/me', (req, res) => {
   const user = currentUser(req);
   if (!user) return res.json({ authenticated: false, demo: DEMO });
+  const st = billing.accessStatus(user);
   res.json({
     authenticated: true,
     demo: Boolean(user.demo) || DEMO,
@@ -92,56 +148,60 @@ app.get('/api/me', (req, res) => {
     picture: user.picture || null,
     schedules: store.listSchedules(user.id),
     frequencies: FREQUENCIES,
+    billing: {
+      plan: user.plan || 'trial',
+      status: st.status,
+      trialDaysLeft: st.trialDaysLeft || 0,
+      billingDemo: BILLING_DEMO,
+    },
   });
 });
 
-// Vista previa del reporte (sin enviar).
+// Suscribirse (Stripe Checkout, o simulado en demo).
+app.post('/api/billing/checkout', requireLogin, async (req, res) => {
+  const user = currentUser(req);
+  if (BILLING_DEMO) {
+    store.upsertUser({ id: user.id, plan: 'active' });
+    return res.json({ ok: true, demo: true, message: 'Suscripción activada (modo demo).' });
+  }
+  try {
+    const url = await billing.createCheckoutUrl(user, BASE_URL);
+    res.json({ ok: true, url });
+  } catch (e) {
+    console.error('checkout error:', e.message);
+    res.status(500).json({ error: 'No se pudo iniciar el pago' });
+  }
+});
+
+// Vista previa (permitida durante la prueba; no requiere suscripción activa).
 app.post('/api/report/preview', requireLogin, async (req, res) => {
   try {
     const cfg = req.body || {};
     const sections = Array.isArray(cfg.sections) ? cfg.sections : [];
-
-    // Si está conectado de verdad y lo pide, enriquece con correos recientes.
     const user = currentUser(req);
     if (cfg.pullEmails && user && user.tokens && !DEMO) {
       const mails = await google.recentEmailSubjects(user.tokens, cfg.emailQuery || 'is:unread', 5);
-      if (mails.length) {
-        sections.push({
-          title: 'Correos recientes',
-          content: mails.map((m) => `• ${m.subject} — ${m.from}`).join('\n'),
-        });
-      }
+      if (mails.length) sections.push({ title: 'Correos recientes', content: mails.map((m) => `• ${m.subject} — ${m.from}`).join('\n') });
     } else if (cfg.pullEmails && DEMO) {
-      sections.push({
-        title: 'Correos recientes (demo)',
-        content: '• Reunión de planificación — jefe@empresa.com\n• Avance del proyecto X — equipo@empresa.com',
-      });
+      sections.push({ title: 'Correos recientes (demo)', content: '• Reunión de planificación — jefe@empresa.com\n• Avance del proyecto X — equipo@empresa.com' });
     }
-
-    const html = generateReportHTML({ ...cfg, sections });
-    res.json({ html });
+    res.json({ html: generateReportHTML({ ...cfg, sections }) });
   } catch (e) {
     console.error('preview error:', e.message);
     res.status(500).json({ error: 'No se pudo generar la vista previa' });
   }
 });
 
-// Enviar el reporte ahora.
-app.post('/api/report/send', requireLogin, async (req, res) => {
+// Enviar ahora (requiere prueba vigente o suscripción).
+app.post('/api/report/send', requireLogin, requireAccess, async (req, res) => {
   try {
     const cfg = req.body || {};
     const recipients = (cfg.recipients || '').split(',').map((s) => s.trim()).filter(Boolean);
     if (!recipients.length) return res.status(400).json({ error: 'Agrega al menos un destinatario' });
-
     const html = generateReportHTML(cfg);
     const user = currentUser(req);
-
-    if (DEMO || !user.tokens) {
-      return res.json({ ok: true, demo: true, sentTo: recipients, message: 'Envío simulado (modo demo).' });
-    }
-    const messageId = await google.sendEmail(user.tokens, {
-      to: recipients, subject: cfg.subject || cfg.title || 'Reporte Ejecutivo', html,
-    });
+    if (DEMO || !user.tokens) return res.json({ ok: true, demo: true, sentTo: recipients, message: 'Envío simulado (modo demo).' });
+    const messageId = await google.sendEmail(user.tokens, { to: recipients, subject: cfg.subject || cfg.title || 'Reporte Ejecutivo', html });
     res.json({ ok: true, messageId, sentTo: recipients });
   } catch (e) {
     console.error('send error:', e.message);
@@ -149,8 +209,8 @@ app.post('/api/report/send', requireLogin, async (req, res) => {
   }
 });
 
-// Programar un reporte recurrente.
-app.post('/api/schedule', requireLogin, (req, res) => {
+// Programar (requiere prueba vigente o suscripción).
+app.post('/api/schedule', requireLogin, requireAccess, (req, res) => {
   const { frequency, config } = req.body || {};
   if (!FREQUENCIES[frequency]) return res.status(400).json({ error: 'Frecuencia no válida' });
   const schedule = {
@@ -181,6 +241,7 @@ const cronJobs = new Map();
 async function runScheduled(schedule) {
   const user = store.getUser(schedule.userId);
   if (!user) return;
+  if (!billing.accessStatus(user).allowed) return; // no enviar si no tiene acceso
   const cfg = schedule.config || {};
   const recipients = (cfg.recipients || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (!recipients.length) return;
@@ -190,9 +251,7 @@ async function runScheduled(schedule) {
     return;
   }
   try {
-    await google.sendEmail(user.tokens, {
-      to: recipients, subject: cfg.subject || cfg.title || 'Reporte Ejecutivo', html,
-    });
+    await google.sendEmail(user.tokens, { to: recipients, subject: cfg.subject || cfg.title || 'Reporte Ejecutivo', html });
     console.log(`[scheduler] reporte enviado para ${user.email}`);
   } catch (e) {
     console.error(`[scheduler] error para ${user.email}:`, e.message);
@@ -201,15 +260,13 @@ async function runScheduled(schedule) {
 
 function registerCron(schedule) {
   if (cronJobs.has(schedule.id)) return;
-  const job = cron.schedule(schedule.cron, () => runScheduled(schedule));
-  cronJobs.set(schedule.id, job);
+  cronJobs.set(schedule.id, cron.schedule(schedule.cron, () => runScheduled(schedule)));
 }
 
-// Re-registra los reportes programados al arrancar.
 store.allSchedules().forEach(registerCron);
 
 // ========================================
-// RUTAS DE PÁGINAS
+// PÁGINAS
 // ========================================
 app.get('/app', (req, res) => {
   if (!req.session.userId) return res.redirect('/');
@@ -219,9 +276,10 @@ app.get('/app', (req, res) => {
 app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════════╗
-║  🚀 AutoReport SaaS (MVP Fase 1)                          ║
-║  🌐 ${(process.env.BASE_URL || `http://localhost:${PORT}`).padEnd(52)}║
-║  ${(DEMO ? '🟡 MODO DEMO (sin credenciales de Google)' : '🟢 Google OAuth activo').padEnd(58)}║
+║  🚀 AutoReport SaaS (MVP Fases 1 + 3)                     ║
+║  🌐 ${BASE_URL.padEnd(56)}║
+║  ${(DEMO ? '🟡 Google: MODO DEMO' : '🟢 Google: OAuth activo').padEnd(58)}║
+║  ${(BILLING_DEMO ? '🟡 Stripe: MODO DEMO' : '🟢 Stripe: activo').padEnd(58)}║
 ╚════════════════════════════════════════════════════════════╝
   `);
 });

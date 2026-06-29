@@ -35,6 +35,27 @@ function upsertUser(user) {
   return db.users[user.id];
 }
 
+// Busca un usuario por su stripeCustomerId (para webhooks de Stripe).
+function findUserByStripeCustomer(customerId) {
+  const users = load().users;
+  return Object.values(users).find((u) => u.stripeCustomerId === customerId) || null;
+}
+
+// --- Lista de espera (validación de demanda) ---
+function addWaitlist(entry) {
+  const db = load();
+  db.waitlist = db.waitlist || [];
+  if (!db.waitlist.some((w) => w.email === entry.email)) {
+    db.waitlist.push(entry);
+    save(db);
+  }
+  return entry;
+}
+
+function listWaitlist() {
+  return load().waitlist || [];
+}
+
 // --- Reportes programados ---
 function listSchedules(userId) {
   return load().schedules.filter((s) => s.userId === userId);
@@ -60,6 +81,9 @@ function removeSchedule(id, userId) {
 module.exports = {
   getUser,
   upsertUser,
+  findUserByStripeCustomer,
+  addWaitlist,
+  listWaitlist,
   listSchedules,
   allSchedules,
   addSchedule,
