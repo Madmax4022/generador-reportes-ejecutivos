@@ -32,6 +32,20 @@ function priorityMatrix(priorities) {
   `;
 }
 
+// Renderiza una tabla de datos generada por la IA (gastos, montos, etc.).
+// table: { caption?, headers: [..], rows: [[..]] }. Vacío si no aplica.
+function dataTable(table) {
+  if (!table || !Array.isArray(table.headers) || !Array.isArray(table.rows) || !table.rows.length) {
+    return '';
+  }
+  const head = table.headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('');
+  const body = table.rows
+    .map((row) => `<tr>${(Array.isArray(row) ? row : [row]).map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`)
+    .join('');
+  const caption = table.caption ? `<p class="muted">${escapeHtml(table.caption)}</p>` : '';
+  return `${caption}<table><tr>${head}</tr>${body}</table>`;
+}
+
 function recommendationsList(recommendations) {
   const items =
     Array.isArray(recommendations) && recommendations.length
@@ -77,6 +91,7 @@ function generateReportHTML(config = {}) {
       body += `
         <h3>📌 ${escapeHtml(t.topic)}</h3>
         <p>${escapeHtml(t.summary || '').replace(/\n/g, '<br>')}</p>
+        ${dataTable(t.table)}
         <p><strong>Seguimiento / próximos pasos:</strong> ${escapeHtml(t.nextSteps || '').replace(/\n/g, '<br>')}</p>
       `;
     }
@@ -104,6 +119,7 @@ function generateReportHTML(config = {}) {
   h2{color:#5b4bd6}h3{color:#5b4bd6;margin-top:24px;border-bottom:2px solid #eee;padding-bottom:6px}
   table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #ddd;padding:10px;text-align:left}th{background:#f4f4fb}
   .ai-badge{display:inline-block;background:#ece9ff;color:#5b4bd6;padding:3px 10px;border-radius:20px;font-size:.85em;font-weight:600}
+  .muted{color:#888;font-size:.9em;margin:4px 0}
   .footer{margin-top:32px;padding-top:14px;border-top:1px solid #eee;color:#888;font-size:.9em}
 </style></head><body>${body}${footer}</body></html>`;
 }

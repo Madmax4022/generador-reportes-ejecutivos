@@ -87,7 +87,9 @@ async function recentEmails(tokens, query = 'newer_than:7d', limit = 15) {
       subject: h('Subject') || '(sin asunto)',
       from: h('From'),
       date: h('Date'),
-      snippet: body.slice(0, 400),
+      // Cuerpo amplio: estados de cuenta / correos con desglose necesitan
+      // más texto para que la IA extraiga montos, conceptos y recurrentes.
+      snippet: body.slice(0, 1500),
     });
   }
   return out;

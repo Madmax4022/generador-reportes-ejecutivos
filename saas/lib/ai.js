@@ -38,6 +38,18 @@ const REPORT_SCHEMA = {
           topic: { type: 'string' },
           summary: { type: 'string' },
           nextSteps: { type: 'string' },
+          // Tabla opcional: úsala cuando el usuario pida datos organizados
+          // (gastos, montos, fechas, recurrentes, etc.). Si no aplica, omítela.
+          table: {
+            type: 'object',
+            properties: {
+              caption: { type: 'string' },
+              headers: { type: 'array', items: { type: 'string' } },
+              rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+            },
+            required: ['headers', 'rows'],
+            additionalProperties: false,
+          },
         },
         required: ['topic', 'summary', 'nextSteps'],
         additionalProperties: false,
@@ -62,7 +74,7 @@ const REPORT_SCHEMA = {
   additionalProperties: false,
 };
 
-function buildPrompt({ title, period, summary, sections = [], emails = [], topics = [] }) {
+function buildPrompt({ title, period, summary, sections = [], emails = [], topics = [], instructions = '' }) {
   let material = `Título del reporte: ${title || 'Reporte Ejecutivo'}\n`;
   if (period) material += `Período: ${period}\n`;
   if (summary) material += `\nNotas del usuario:\n${summary}\n`;
@@ -92,15 +104,25 @@ function buildPrompt({ title, period, summary, sections = [], emails = [], topic
   } else {
     focus = `\n\nEn "topics" agrupa los asuntos principales (2-5) con su resumen y próximos pasos.`;
   }
+  let guide = '';
+  if (instructions && instructions.trim()) {
+    guide =
+      `\n\nINSTRUCCIONES ESPECÍFICAS DEL USUARIO (marco de referencia — síguelas al pie de la letra ` +
+      `sobre QUÉ información extraer y CÓMO presentarla):\n"""${instructions.trim()}"""\n` +
+      `- Extrae exactamente los datos que pide (montos, fechas, conceptos, recurrentes, etc.) desde el material.\n` +
+      `- Cuando pida ver datos "organizados", "por tarjeta", "lista de gastos", "cuáles son recurrentes" o algo tabular, ` +
+      `LLENA el campo "table" del tema correspondiente (headers + rows) además del "summary".\n` +
+      `- Respeta el formato y el detalle que pide. No resumas de más si pidió el desglose.`;
+  }
   return (
     `A partir del siguiente material en bruto, redacta un reporte ejecutivo para jefatura.\n\n` +
-    `${material}${focus}\n\n` +
+    `${material}${focus}${guide}\n\n` +
     `Devuelve:\n` +
     `- executiveSummary: 2-3 frases claras en español (visión general de los temas).\n` +
-    `- topics: ver instrucción de arriba (organizado por tema, con seguimiento).\n` +
+    `- topics: ver instrucción de arriba (organizado por tema, con seguimiento; usa "table" cuando aplique).\n` +
     `- priorities: 3-5 temas con urgencia (Alta/Media/Baja) e impacto (Alto/Medio/Bajo).\n` +
     `- recommendations: 3-5 acciones concretas.\n` +
-    `Sé concreto y conciso; no inventes datos que no estén en el material.`
+    `Sé concreto; no inventes datos que no estén en el material.`
   );
 }
 
@@ -109,7 +131,7 @@ async function generateReportContent(input) {
   const client = new AnthropicLib(); // lee ANTHROPIC_API_KEY del entorno
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 3000,
     system:
       'Eres un analista que redacta reportes ejecutivos claros y accionables para ' +
       'jefatura. Escribe en español, en tono profesional y directo.',
@@ -124,15 +146,31 @@ async function generateReportContent(input) {
 function demoReportContent(input = {}) {
   const base = (input.summary || '').trim();
   const reqTopics = (input.topics || []).length ? input.topics : ['Tema general'];
+  const hasGuide = Boolean((input.instructions || '').trim());
   return {
     executiveSummary:
       (base ? base + ' ' : '') +
       'Este resumen fue redactado automáticamente por IA a partir del material proporcionado, ' +
       'enfocado en los temas solicitados.',
-    topics: reqTopics.map((t) => ({
+    topics: reqTopics.map((t, i) => ({
       topic: t,
       summary: `(Demo) Resumen de lo ocurrido esta semana sobre "${t}", filtrando solo lo relacionado con ese tema.`,
       nextSteps: `(Demo) Pendientes y seguimiento de "${t}".`,
+      // Si el usuario dio instrucciones (ej. "organiza los gastos"), la IA
+      // devolvería una tabla. En demo mostramos un ejemplo en el primer tema.
+      ...(hasGuide && i === 0
+        ? {
+            table: {
+              caption: '(Demo) Datos organizados según tus instrucciones',
+              headers: ['Concepto', 'Monto', 'Recurrente'],
+              rows: [
+                ['Suscripción mensual', '$199.00', 'Sí'],
+                ['Compra puntual', '$540.00', 'No'],
+                ['Servicio anual', '$1,200.00', 'Sí'],
+              ],
+            },
+          }
+        : {}),
     })),
     priorities: [
       { tema: 'Cerrar pendientes prioritarios del período', urgencia: 'Alta', impacto: 'Alto' },

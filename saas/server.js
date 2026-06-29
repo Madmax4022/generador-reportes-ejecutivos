@@ -109,6 +109,7 @@ async function applyAI(cfg, sections, topics) {
     sections: sections || [],
     emails: cfg.emails || [],
     topics: topics || [],
+    instructions: cfg.instructions || '',
   };
   try {
     const content = ai.isConfigured()
@@ -143,6 +144,10 @@ async function gatherSources(user, cfg, topics) {
       let q = cfg.emailQuery || 'newer_than:7d';
       if (topics && topics.length) {
         q += ' (' + topics.map((t) => `"${t}"`).join(' OR ') + ')';
+      }
+      // Filtra por remitente (ej. el banco): from:(BBVA OR "estado de cuenta@...")
+      if (cfg.fromSender && cfg.fromSender.trim()) {
+        q += ' from:(' + cfg.fromSender.trim() + ')';
       }
       emails = await google.recentEmails(user.tokens, q, 20);
     } else {
