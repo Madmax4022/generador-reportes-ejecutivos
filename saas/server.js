@@ -16,6 +16,7 @@ const cron = require('node-cron');
 const store = require('./lib/store');
 const google = require('./lib/google');
 const billing = require('./lib/billing');
+const ai = require('./lib/ai');
 const { generateReportHTML } = require('./lib/report');
 
 const app = express();
@@ -96,6 +97,37 @@ const FREQUENCIES = {
   monthly: { label: 'El día 1 de cada mes (9:00 AM)', cron: '0 9 1 * *' },
 };
 
+// Si el usuario pidió IA, enriquece la config con resumen/prioridades/
+// recomendaciones generadas por Claude (o contenido demo si no hay API key).
+// Resiliente: si la IA falla, devuelve la config sin cambios.
+async function applyAI(cfg, sections) {
+  if (!cfg || !cfg.useAI) return cfg;
+  const input = {
+    title: cfg.title,
+    period: cfg.period,
+    summary: cfg.summary,
+    sections: sections || [],
+    emails: cfg.emails || [],
+  };
+  try {
+    const content = ai.isConfigured()
+      ? await ai.generateReportContent(input)
+      : ai.demoReportContent(input);
+    return {
+      ...cfg,
+      summary: content.executiveSummary || cfg.summary,
+      priorities: content.priorities,
+      recommendations: content.recommendations,
+      includePriorities: true,
+      includeRecommendations: true,
+      aiGenerated: true,
+    };
+  } catch (e) {
+    console.error('AI generation failed, falling back:', e.message);
+    return cfg;
+  }
+}
+
 // ========================================
 // AUTENTICACIÓN
 // ========================================
@@ -158,6 +190,7 @@ app.get('/api/me', (req, res) => {
       trialDaysLeft: st.trialDaysLeft || 0,
       billingDemo: BILLING_DEMO,
     },
+    ai: { available: true, demo: !ai.isConfigured(), model: ai.MODEL },
   });
 });
 
@@ -183,13 +216,19 @@ app.post('/api/report/preview', requireLogin, async (req, res) => {
     const cfg = req.body || {};
     const sections = Array.isArray(cfg.sections) ? cfg.sections : [];
     const user = currentUser(req);
+    let emails = [];
     if (cfg.pullEmails && user && user.tokens && !DEMO) {
-      const mails = await google.recentEmailSubjects(user.tokens, cfg.emailQuery || 'is:unread', 5);
-      if (mails.length) sections.push({ title: 'Correos recientes', content: mails.map((m) => `• ${m.subject} — ${m.from}`).join('\n') });
+      emails = await google.recentEmailSubjects(user.tokens, cfg.emailQuery || 'is:unread', 5);
+      if (emails.length) sections.push({ title: 'Correos recientes', content: emails.map((m) => `• ${m.subject} — ${m.from}`).join('\n') });
     } else if (cfg.pullEmails && DEMO) {
-      sections.push({ title: 'Correos recientes (demo)', content: '• Reunión de planificación — jefe@empresa.com\n• Avance del proyecto X — equipo@empresa.com' });
+      emails = [
+        { subject: 'Reunión de planificación', from: 'jefe@empresa.com' },
+        { subject: 'Avance del proyecto X', from: 'equipo@empresa.com' },
+      ];
+      sections.push({ title: 'Correos recientes (demo)', content: emails.map((m) => `• ${m.subject} — ${m.from}`).join('\n') });
     }
-    res.json({ html: generateReportHTML({ ...cfg, sections }) });
+    const finalCfg = await applyAI({ ...cfg, emails }, sections);
+    res.json({ html: generateReportHTML({ ...finalCfg, sections }) });
   } catch (e) {
     console.error('preview error:', e.message);
     res.status(500).json({ error: 'No se pudo generar la vista previa' });
@@ -202,7 +241,8 @@ app.post('/api/report/send', requireLogin, requireAccess, async (req, res) => {
     const cfg = req.body || {};
     const recipients = (cfg.recipients || '').split(',').map((s) => s.trim()).filter(Boolean);
     if (!recipients.length) return res.status(400).json({ error: 'Agrega al menos un destinatario' });
-    const html = generateReportHTML(cfg);
+    const finalCfg = await applyAI(cfg, cfg.sections || []);
+    const html = generateReportHTML(finalCfg);
     const user = currentUser(req);
     if (DEMO || !user.tokens) return res.json({ ok: true, demo: true, sentTo: recipients, message: 'Envío simulado (modo demo).' });
     const messageId = await google.sendEmail(user.tokens, { to: recipients, subject: cfg.subject || cfg.title || 'Reporte Ejecutivo', html });
@@ -249,7 +289,8 @@ async function runScheduled(schedule) {
   const cfg = schedule.config || {};
   const recipients = (cfg.recipients || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (!recipients.length) return;
-  const html = generateReportHTML(cfg);
+  const finalCfg = await applyAI(cfg, cfg.sections || []);
+  const html = generateReportHTML(finalCfg);
   if (user.demo || !user.tokens) {
     console.log(`[scheduler] (demo) reporte para ${user.email} -> ${recipients.join(', ')}`);
     return;
@@ -284,6 +325,7 @@ app.listen(PORT, () => {
 ║  🌐 ${BASE_URL.padEnd(56)}║
 ║  ${(DEMO ? '🟡 Google: MODO DEMO' : '🟢 Google: OAuth activo').padEnd(58)}║
 ║  ${(BILLING_DEMO ? '🟡 Stripe: MODO DEMO' : '🟢 Stripe: activo').padEnd(58)}║
+║  ${(ai.isConfigured() ? '🟢 IA (Claude): activa' : '🟡 IA (Claude): MODO DEMO').padEnd(58)}║
 ╚════════════════════════════════════════════════════════════╝
   `);
 });

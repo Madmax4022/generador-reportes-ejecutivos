@@ -34,6 +34,7 @@
         <label>Resumen ejecutivo</label>
         <textarea id="summary">Síntesis de los avances y hallazgos clave del período.</textarea>
 
+        <label><input type="checkbox" id="useAI" checked style="width:auto" /> ✨ Redactar con IA (Claude) <span id="aiMode" class="muted"></span></label>
         <label><input type="checkbox" id="pullEmails" style="width:auto" /> Incluir mis correos recientes</label>
         <label><input type="checkbox" id="prio" checked style="width:auto" /> Incluir matriz de prioridades</label>
         <label><input type="checkbox" id="recs" checked style="width:auto" /> Incluir recomendaciones</label>
@@ -85,7 +86,7 @@
       return {
         title: title.value, period: period.value, summary: summary.value,
         includePriorities: prio.checked, includeRecommendations: recs.checked,
-        brandName: brand.value, pullEmails: pullEmails.checked,
+        brandName: brand.value, pullEmails: pullEmails.checked, useAI: useAI.checked,
         recipients: recipients.value, subject: subject.value,
       };
     }
@@ -95,6 +96,8 @@
       if (!ME.authenticated) { location.href = '/'; return; }
       document.getElementById('who').textContent = ME.email;
       if (ME.demo) document.getElementById('demoBanner').style.display = 'block';
+      if (ME.ai) document.getElementById('aiMode').textContent =
+        ME.ai.demo ? '(demo — sin API key)' : '(' + ME.ai.model + ')';
       renderBilling();
       const sel = document.getElementById('freq');
       sel.innerHTML = Object.entries(ME.frequencies)

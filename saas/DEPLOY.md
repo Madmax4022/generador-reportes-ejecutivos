@@ -55,6 +55,20 @@ importa perder datos al reiniciar, cambia `plan: starter` por `plan: free` y bor
 
 ---
 
+## Parte D — Activar la redacción con IA (Claude)
+
+1. Crea una API key en **https://console.anthropic.com**.
+2. En Render → **Environment**, agrega:
+   - `ANTHROPIC_API_KEY` = `sk-ant-...`
+3. **Save**. Ahora la casilla "✨ Redactar con IA" usa Claude de verdad para
+   redactar el resumen, la matriz de prioridades y las recomendaciones.
+
+Sin la key, la IA corre en **modo demo** (contenido de ejemplo). El modelo por
+defecto es `claude-opus-4-8`; puedes cambiarlo con `ANTHROPIC_MODEL`.
+Costo aproximado: unos pocos centavos de USD por reporte generado.
+
+---
+
 ## Resumen de variables (Render → Environment)
 
 | Variable | Para qué | Obligatoria |
@@ -64,6 +78,7 @@ importa perder datos al reiniciar, cambia `plan: starter` por `plan: free` y bor
 | `DATA_DIR` | Carpeta del disco persistente | Ya configurada (`/var/data`) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Conectar Gmail real | Para Google real |
 | `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` | Cobros | Para facturar |
+| `ANTHROPIC_API_KEY` | Redacción con IA (Claude) | Para IA real |
 
 Sin ninguna de estas, todo corre en **modo demo** y la URL sigue siendo mostrable.
 

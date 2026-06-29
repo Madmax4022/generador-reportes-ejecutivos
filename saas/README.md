@@ -46,10 +46,17 @@ Tú —dueño del SaaS— registras **una sola** app de Google que sirve a **tod
 - **Envío por el Gmail del propio usuario** vía API de Google.
 - Almacén simple en JSON (se reemplaza por una base de datos real en producción).
 
+## ✨ Redacción con IA (Claude)
+
+La casilla **"Redactar con IA"** envía el material (notas + correos) a **Claude**
+(`claude-opus-4-8` por defecto) y devuelve un resumen ejecutivo, una matriz de
+prioridades y recomendaciones — listos en el reporte. Sin `ANTHROPIC_API_KEY`
+corre en modo demo (contenido de ejemplo). Setup real: ver `DEPLOY.md` → Parte D.
+
 ## 🗺️ Roadmap
 
-- **Fase 2** — Plantillas guardadas, más fuentes (Drive/Sheets), branding por cliente.
-- **Fase 3** — Facturación con Stripe, prueba gratis, página de ventas.
+- **Fase 2** — ✅ Resúmenes con IA · pendiente: plantillas guardadas, más fuentes (Drive/Sheets), branding por cliente.
+- **Fase 3** — ✅ Facturación con Stripe, prueba gratis, página de ventas.
 - **Fase 4** — Soporte Microsoft 365 (Outlook/OneDrive/Excel), exportar a PDF, white-label.
 
 ## ⚠️ Notas para producción (aún pendientes)
