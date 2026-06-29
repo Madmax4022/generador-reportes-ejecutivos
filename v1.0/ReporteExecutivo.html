@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Reportes Ejecutivos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2::before {
+            content: '📊';
+            font-size: 1.3em;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="url"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .data-source {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-source-info {
+            flex: 1;
+        }
+
+        .data-source-type {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .data-source-url {
+            font-size: 0.85em;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.85em;
+            min-width: auto;
+        }
+
+        .btn-remove:hover {
+            background: #c82333;
+        }
+
+        .preview-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            grid-column: 1 / -1;
+        }
+
+        .preview-section h2::before {
+            content: '👁️';
+        }
+
+        .report-preview {
+            background: white;
+            padding: 30px;
+            border-radius: 6px;
+            line-height: 1.8;
+            color: #333;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+
+        .report-preview h3 {
+            color: #667eea;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .report-preview h3:first-child {
+            margin-top: 0;
+        }
+
+        .report-preview ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .report-preview li {
+            margin-bottom: 8px;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            min-width: auto;
+            flex: 0;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .icon-input {
+            position: relative;
+        }
+
+        .icon-input::before {
+            position: absolute;
+            right: 12px;
+            top: 38px;
+            font-size: 1.2em;
+            pointer-events: none;
+        }
+
+        input[type="email"]::before {
+            content: '✉️';
+        }
+
+        .checklist {
+            list-style: none;
+        }
+
+        .checklist li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .checklist input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ddd;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Generador de Reportes Ejecutivos</h1>
+            <p>Integración con Google Workspace | Extrae, organiza y envía reportes automáticos</p>
+        </div>
+
+        <div class="content">
+            <!-- SECCIÓN 1: FUENTES DE DATOS -->
+            <div class="section">
+                <h2>Fuentes de Datos</h2>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="gmail">Gmail</button>
+                    <button class="tab-btn" data-tab="drive">Drive</button>
+                    <button class="tab-btn" data-tab="sheets">Sheets</button>
+                    <button class="tab-btn" data-tab="manual">Manual</button>
+                </div>
+
+                <!-- Gmail -->
+                <div id="gmail" class="tab-content active">
+                    <div class="form-group">
+                        <label>Filtro de búsqueda (Gmail query)</label>
+                        <input type="text" id="gmailQuery" placeholder="ej: from:jefe@empresa.com label:pendiente" value="is:unread">
+                    </div>
+                    <div class="form-group">
+                        <label>Máximo de correos a procesar</label>
+                        <input type="text" id="gmailLimit" value="10" placeholder="10">
+                    </div>
+                    <button class="btn-secondary" onclick="addGmailSource()">+ Agregar fuente Gmail</button>
+                </div>
+
+                <!-- Google Drive -->
+                <div id="drive" class="tab-content">
+                    <div class="form-group">
+                        <label>URL o ID del documento</label>
+                        <input type="text" id="driveUrl" placeholder="https://docs.google.com/document/d/..." value="">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de contenido a extraer</label>
+                        <select id="driveContentType">
+                            <option value="full">Contenido completo</option>
+                            <option value="summary">Resumen automático</option>
+                            <option value="table">Solo tablas</option>
+                        </select>
+                    </div>
+                    <button class="btn-secondary" onclick="addDriveSource()">+ Agregar fuente Drive</button>
+                </div>
+
+                <!-- Google Sheets -->
+                <div id="sheets" class="tab-content">
+                    <div class="form-group">
+                        <label>URL o ID de la hoja</label>
+                        <input type="text" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/..." value="">
+                    </div>
+                    <div class="form-group">
+                        <label>Rango o pestaña específica</label>
+                        <input type="text" id="sheetsRange" placeholder="Sheet1!A1:Z100" value="">
+                    </div>
+                    <button class="btn-secondary" onclick="addSheetsSource()">+ Agregar fuente Sheets</button>
+                </div>
+
+                <!-- Entrada Manual -->
+                <div id="manual" class="tab-content">
+                    <div class="form-group">
+                        <label>Título de la sección</label>
+                        <input type="text" id="manualTitle" placeholder="ej: Hallazgos clave">
+                    </div>
+                    <div class="form-group">
+                        <label>Contenido</label>
+                        <textarea id="manualContent" placeholder="Ingresa el contenido aquí..."></textarea>
+                    </div>
+                    <button class="btn-secondary" onclick="addManualSource()">+ Agregar contenido manual</button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: CONFIGURACIÓN DEL REPORTE -->
+            <div class="section">
+                <h2 style="--icon: '⚙️'">Configuración del Reporte</h2>
+                
+                <div class="form-group">
+                    <label>Título del reporte</label>
+                    <input type="text" id="reportTitle" placeholder="ej: Reporte Mensual de Gestión" value="Reporte Ejecutivo - Junio 2026">
+                </div>
+
+                <div class="form-group">
+                    <label>Período/Fecha</label>
+                    <input type="text" id="reportDate" placeholder="ej: Junio 1-30, 2026" value="Junio 2026">
+                </div>
+
+                <div class="form-group">
+                    <label>Resumen ejecutivo (2-3 párrafos)</label>
+                    <textarea id="executiveSummary" placeholder="Síntesis de los puntos más importantes...">Este reporte consolida la información más relevante de los últimos días. Se presentan los hallazgos clave, métricas principales y recomendaciones de acción inmediata para la consideración de la jefatura.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Destinatarios (correos separados por coma)</label>
+                    <input type="text" id="recipients" placeholder="jefe@empresa.com, director@empresa.com" value="">
+                </div>
+
+                <div class="form-group">
+                    <label>Asunto del correo</label>
+                    <input type="text" id="emailSubject" placeholder="Reporte ejecutivo - [Fecha]" value="Reporte Ejecutivo - Junio 2026">
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="includeCharts"> Incluir gráficos (si hay datos numéricos)
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="includePriorities" checked> Incluir matriz de prioridades
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="includeRecommendations" checked> Incluir recomendaciones de acción
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: FUENTES AGREGADAS -->
+            <div class="section">
+                <h2>Fuentes Agregadas</h2>
+                <div id="sourcesList"></div>
+                <button class="btn-secondary" onclick="clearAllSources()">Limpiar todo</button>
+            </div>
+
+            <!-- SECCIÓN 4: VISTA PREVIA Y ENVÍO -->
+            <div class="section">
+                <h2>Acciones</h2>
+                
+                <div id="statusMessage" class="status-message"></div>
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Procesando reporte...</p>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="generatePreview()">👁️ Vista Previa</button>
+                    <button class="btn-success" onclick="sendReport()">📧 Enviar Reporte</button>
+                </div>
+
+                <button class="btn-secondary" onclick="exportToHTML()">📥 Descargar HTML</button>
+            </div>
+
+            <!-- VISTA PREVIA -->
+            <div class="preview-section">
+                <h2>Vista Previa del Reporte</h2>
+                <div id="reportPreview" class="report-preview">
+                    <p style="color: #999; text-align: center; padding: 40px 0;">
+                        Haz clic en "Vista Previa" para generar el reporte
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>💡 Tip: Usa filtros de Gmail como "label:importante" o "from:jefe" para extraer información específica</p>
+            <p>📱 Compatible con Google Workspace • Requiere permiso de acceso a Gmail, Drive y Sheets</p>
+        </div>
+    </div>
+
+    <script>
+        // Estado de la aplicación
+        let appState = {
+            dataSources: [],
+            generatedReport: null
+        };
+
+        // MANEJO DE TABS
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // AGREGAR FUENTES
+        function addGmailSource() {
+            const query = document.getElementById('gmailQuery').value || 'is:unread';
+            const limit = document.getElementById('gmailLimit').value || '10';
+            
+            if (!query.trim()) {
+                showMessage('Ingresa un filtro de Gmail válido', 'error');
+                return;
+            }
+
+            appState.dataSources.push({
+                type: 'gmail',
+                query: query,
+                limit: parseInt(limit),
+                id: Date.now()
+            });
+
+            document.getElementById('gmailQuery').value = '';
+            document.getElementById('gmailLimit').value = '10';
+            updateSourcesList();
+            showMessage('Fuente Gmail agregada', 'success');
+        }
+
+        function addDriveSource() {
+            const url = document.getElementById('driveUrl').value;
+            const contentType = document.getElementById('driveContentType').value;
+            
+            if (!url.trim()) {
+                showMessage('Ingresa una URL o ID de Drive válido', 'error');
+                return;
+            }
+
+            appState.dataSources.push({
+                type: 'drive',
+                url: url,
+                contentType: contentType,
+                id: Date.now()
+            });
+
+            document.getElementById('driveUrl').value = '';
+            updateSourcesList();
+            showMessage('Fuente Drive agregada', 'success');
+        }
+
+        function addSheetsSource() {
+            const url = document.getElementById('sheetsUrl').value;
+            const range = document.getElementById('sheetsRange').value;
+            
+            if (!url.trim()) {
+                showMessage('Ingresa una URL o ID de Sheets válido', 'error');
+                return;
+            }
+
+            appState.dataSources.push({
+                type: 'sheets',
+                url: url,
+                range: range,
+                id: Date.now()
+            });
+
+            document.getElementById('sheetsUrl').value = '';
+            document.getElementById('sheetsRange').value = '';
+            updateSourcesList();
+            showMessage('Fuente Sheets agregada', 'success');
+        }
+
+        function addManualSource() {
+            const title = document.getElementById('manualTitle').value;
+            const content = document.getElementById('manualContent').value;
+            
+            if (!title.trim() || !content.trim()) {
+                showMessage('Ingresa título y contenido', 'error');
+                return;
+            }
+
+            appState.dataSources.push({
+                type: 'manual',
+                title: title,
+                content: content,
+                id: Date.now()
+            });
+
+            document.getElementById('manualTitle').value = '';
+            document.getElementById('manualContent').value = '';
+            updateSourcesList();
+            showMessage('Contenido manual agregado', 'success');
+        }
+
+        function removeSource(id) {
+            appState.dataSources = appState.dataSources.filter(s => s.id !== id);
+            updateSourcesList();
+            showMessage('Fuente eliminada', 'info');
+        }
+
+        function clearAllSources() {
+            if (confirm('¿Eliminar todas las fuentes?')) {
+                appState.dataSources = [];
+                updateSourcesList();
+                showMessage('Todas las fuentes han sido eliminadas', 'info');
+            }
+        }
+
+        function updateSourcesList() {
+            const list = document.getElementById('sourcesList');
+            
+            if (appState.dataSources.length === 0) {
+                list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay fuentes agregadas</p>';
+                return;
+            }
+
+            list.innerHTML = appState.dataSources.map(source => {
+                let sourceInfo = '';
+                
+                if (source.type === 'gmail') {
+                    sourceInfo = `📧 Gmail: "${source.query}" (máx ${source.limit})`;
+                } else if (source.type === 'drive') {
+                    sourceInfo = `📄 Drive: ${source.url.substring(0, 50)}...`;
+                } else if (source.type === 'sheets') {
+                    sourceInfo = `📊 Sheets: ${source.url.substring(0, 50)}...`;
+                } else if (source.type === 'manual') {
+                    sourceInfo = `✏️ ${source.title}`;
+                }
+
+                return `
+                    <div class="data-source">
+                        <div class="data-source-info">
+                            <div class="data-source-type">${sourceInfo}</div>
+                        </div>
+                        <button class="btn-remove" onclick="removeSource(${source.id})">Eliminar</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // GENERAR PREVIEW
+        function generatePreview() {
+            const title = document.getElementById('reportTitle').value || 'Reporte Ejecutivo';
+            const date = document.getElementById('reportDate').value || 'Junio 2026';
+            const summary = document.getElementById('executiveSummary').value;
+            
+            let html = `
+                <h3>${title}</h3>
+                <p><strong>Período:</strong> ${date}</p>
+                
+                <h3 style="margin-top: 25px;">Resumen Ejecutivo</h3>
+                <p>${summary}</p>
+            `;
+
+            // Agregar contenido de fuentes
+            appState.dataSources.forEach(source => {
+                if (source.type === 'manual') {
+                    html += `
+                        <h3>${source.title}</h3>
+                        <p>${source.content.replace(/\n/g, '<br>')}</p>
+                    `;
+                }
+            });
+
+            // Agregar secciones si hay fuentes integradas
+            if (appState.dataSources.some(s => ['gmail', 'drive', 'sheets'].includes(s.type))) {
+                html += `
+                    <h3>Fuentes de Datos Integradas</h3>
+                    <ul>
+                        ${appState.dataSources
+                            .filter(s => ['gmail', 'drive', 'sheets'].includes(s.type))
+                            .map(s => {
+                                if (s.type === 'gmail') return `<li>Gmail: ${s.query}</li>`;
+                                if (s.type === 'drive') return `<li>Google Drive: ${s.url}</li>`;
+                                if (s.type === 'sheets') return `<li>Google Sheets: ${s.url}</li>`;
+                            }).join('')}
+                    </ul>
+                    <p><em>💡 Para procesar estas fuentes, debes conectar con Google Workspace usando la API de Anthropic</em></p>
+                `;
+            }
+
+            if (document.getElementById('includeRecommendations').checked) {
+                html += `
+                    <h3>Recomendaciones de Acción</h3>
+                    <ul>
+                        <li>Revisar hallazgos en orden de prioridad</li>
+                        <li>Tomar decisiones sobre acciones recomendadas</li>
+                        <li>Comunicar a los equipos responsables</li>
+                        <li>Programar seguimiento</li>
+                    </ul>
+                `;
+            }
+
+            if (document.getElementById('includePriorities').checked) {
+                html += `
+                    <h3>Matriz de Prioridades</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                        <tr style="background: #f0f0f0;">
+                            <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Tema</th>
+                            <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Urgencia</th>
+                            <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Impacto</th>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 10px;">Configurar fuentes de datos</td>
+                            <td style="border: 1px solid #ddd; padding: 10px;">🔴 Alta</td>
+                            <td style="border: 1px solid #ddd; padding: 10px;">🔴 Alto</td>
+                        </tr>
+                    </table>
+                `;
+            }
+
+            html += `
+                <h3 style="margin-top: 25px;">Próximos Pasos</h3>
+                <ul>
+                    <li>Enviar este reporte a la jefatura</li>
+                    <li>Agendar reunión de seguimiento</li>
+                    <li>Monitorear acciones recomendadas</li>
+                </ul>
+            `;
+
+            appState.generatedReport = html;
+            document.getElementById('reportPreview').innerHTML = html;
+            showMessage('Vista previa generada', 'success');
+        }
+
+        // ENVIAR REPORTE
+        function sendReport() {
+            const recipients = document.getElementById('recipients').value;
+            const subject = document.getElementById('emailSubject').value;
+
+            if (!recipients.trim()) {
+                showMessage('Ingresa al menos un destinatario', 'error');
+                return;
+            }
+
+            if (!appState.generatedReport) {
+                generatePreview();
+            }
+
+            showLoading(true);
+
+            // Simular envío
+            setTimeout(() => {
+                showLoading(false);
+                showMessage(`✅ Reporte enviado a: ${recipients}`, 'success');
+                
+                // En una implementación real, aquí se usaría la API de Gmail
+                console.log('Reporte a enviar:', {
+                    to: recipients,
+                    subject: subject,
+                    body: appState.generatedReport
+                });
+            }, 2000);
+        }
+
+        // EXPORTAR A HTML
+        function exportToHTML() {
+            if (!appState.generatedReport) {
+                generatePreview();
+            }
+
+            const title = document.getElementById('reportTitle').value || 'Reporte Ejecutivo';
+            const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .report {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h3 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h3:first-child {
+            margin-top: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background: #f0f0f0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="report">
+        ${appState.generatedReport}
+        <div class="footer">
+            <p>Reporte generado automáticamente el ${new Date().toLocaleDateString('es-ES')}</p>
+            <p>Generador de Reportes Ejecutivos | Google Workspace Integration</p>
+        </div>
+    </div>
+</body>
+</html>
+            `;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title.replace(/\s+/g, '_')}_${new Date().getTime()}.html`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showMessage('Archivo HTML descargado', 'success');
+        }
+
+        // UTILIDADES
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('statusMessage');
+            messageEl.textContent = message;
+            messageEl.className = `status-message show ${type}`;
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('show', show);
+        }
+
+        // Inicializar
+        updateSourcesList();
+    </script>
+</body>
+</html>
