@@ -5,6 +5,19 @@
 
 const { google } = require('googleapis');
 
+// Extractor de texto de PDF (opcional). Si está, leemos el PDF localmente
+// (0 tokens) y solo recurrimos a la visión de Claude para PDFs escaneados.
+let pdfParse = null;
+try {
+  pdfParse = require('pdf-parse');
+} catch (e) {
+  pdfParse = null;
+}
+// Mínimo de caracteres para considerar que el PDF tiene capa de texto útil.
+const PDF_TEXT_MIN = 80;
+// Tope de texto por PDF (acota tokens en estados de cuenta largos).
+const PDF_TEXT_MAX = 12000;
+
 const SCOPES = [
   'openid',
   'email',
@@ -117,7 +130,24 @@ async function recentEmails(tokens, query = 'newer_than:7d', limit = 15, opts = 
           const att = await gmail.users.messages.attachments.get({ userId: 'me', messageId: m.id, id: p.attachmentId });
           const buf = Buffer.from(att.data.data || '', 'base64url');
           if (!buf.length || buf.length > maxPdfBytes) continue;
-          (entry.pdfs = entry.pdfs || []).push({ filename: p.filename, data: buf.toString('base64') });
+          // Intento barato: extraer el texto del PDF localmente (0 tokens).
+          let text = '';
+          if (pdfParse) {
+            try {
+              const parsed = await pdfParse(buf);
+              text = (parsed.text || '').replace(/\n{3,}/g, '\n\n').trim();
+            } catch (e) {
+              text = '';
+            }
+          }
+          entry.pdfs = entry.pdfs || [];
+          if (text.length >= PDF_TEXT_MIN) {
+            // PDF digital: mandamos el texto (mucho más barato que la imagen).
+            entry.pdfs.push({ filename: p.filename, text: text.slice(0, PDF_TEXT_MAX) });
+          } else {
+            // PDF escaneado/sin texto: lo lee Claude por visión (base64).
+            entry.pdfs.push({ filename: p.filename, data: buf.toString('base64') });
+          }
           pdfBudget--;
         } catch (e) {
           console.error('pdf attachment:', e.message);

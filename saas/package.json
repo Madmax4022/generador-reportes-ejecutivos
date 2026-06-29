@@ -25,6 +25,7 @@
     "express-session": "^1.17.3",
     "googleapis": "^118.0.0",
     "node-cron": "^3.0.2",
+    "pdf-parse": "^1.1.1",
     "stripe": "^14.25.0"
   },
   "devDependencies": {

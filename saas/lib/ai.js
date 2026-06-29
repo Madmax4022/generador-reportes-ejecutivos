@@ -92,12 +92,22 @@ function buildPrompt({ title, period, summary, sections = [], emails = [], topic
         })
         .join('\n');
   }
-  if (pdfs.length) {
+  // PDFs con texto ya extraído: van inline en el prompt (barato, sin visión).
+  const textPdfs = pdfs.filter((p) => p.text);
+  const visionPdfs = pdfs.filter((p) => p.data && !p.text);
+  if (textPdfs.length) {
     material +=
-      `\n\nDocumentos PDF adjuntos a los correos (${pdfs.length}): ` +
-      pdfs.map((p) => p.filename).join(', ') +
-      `.\nLee su contenido completo (pueden ser estados de cuenta, facturas o ` +
-      `tablas) y trátalo como FUENTE PRINCIPAL de datos duros.`;
+      `\n\nContenido de los PDF adjuntos (FUENTE PRINCIPAL de datos duros — ` +
+      `estados de cuenta, facturas, tablas):`;
+    for (const p of textPdfs) {
+      material += `\n\n--- PDF: ${p.filename} ---\n${p.text}`;
+    }
+  }
+  if (visionPdfs.length) {
+    material +=
+      `\n\nTambién se adjuntan ${visionPdfs.length} PDF como documento ` +
+      `(${visionPdfs.map((p) => p.filename).join(', ')}). Lee su contenido completo ` +
+      `y trátalo como FUENTE PRINCIPAL de datos duros.`;
   }
   let focus = '';
   if (topics.length) {
@@ -136,9 +146,11 @@ function buildPrompt({ title, period, summary, sections = [], emails = [], topic
 // Llama a Claude de verdad (requiere ANTHROPIC_API_KEY).
 async function generateReportContent(input) {
   const client = new AnthropicLib(); // lee ANTHROPIC_API_KEY del entorno
-  // Claude lee los PDF de forma nativa: se adjuntan como bloques "document".
+  // Solo los PDF SIN texto (escaneados) se mandan como bloque "document"
+  // (visión, más caro). Los digitales ya van como texto dentro del prompt.
   const userContent = [];
   for (const pdf of input.pdfs || []) {
+    if (!pdf.data || pdf.text) continue;
     userContent.push({
       type: 'document',
       title: pdf.filename,
