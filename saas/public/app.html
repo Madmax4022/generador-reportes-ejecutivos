@@ -35,9 +35,21 @@
         <textarea id="summary">Síntesis de los avances y hallazgos clave del período.</textarea>
 
         <label><input type="checkbox" id="useAI" checked style="width:auto" /> ✨ Redactar con IA (Claude) <span id="aiMode" class="muted"></span></label>
-        <label><input type="checkbox" id="pullEmails" style="width:auto" /> Incluir mis correos recientes</label>
         <label><input type="checkbox" id="prio" checked style="width:auto" /> Incluir matriz de prioridades</label>
         <label><input type="checkbox" id="recs" checked style="width:auto" /> Incluir recomendaciones</label>
+
+        <div class="section" style="margin-top:18px;">
+          <h2 style="font-size:1.1em;">📥 Fuentes de datos <span class="muted" style="font-size:.8em;">(requiere conectar Google real)</span></h2>
+          <label><input type="checkbox" id="pullEmails" checked style="width:auto" /> Incluir correos del período</label>
+          <label>Consulta de Gmail</label>
+          <input id="emailQuery" value="newer_than:7d" placeholder="ej: newer_than:7d label:importante" />
+          <label>Documento de Drive (URL o ID, opcional)</label>
+          <input id="driveId" placeholder="https://docs.google.com/document/d/..." />
+          <label>Hoja de cálculo (URL o ID, opcional)</label>
+          <input id="sheetId" placeholder="https://docs.google.com/spreadsheets/d/..." />
+          <label>Rango de la hoja</label>
+          <input id="sheetRange" value="A1:Z100" placeholder="A1:Z100" />
+        </div>
 
         <label>Marca / firma (opcional)</label>
         <input id="brand" placeholder="Ej: KANAN Sentinel Inc." />
@@ -87,6 +99,7 @@
         title: title.value, period: period.value, summary: summary.value,
         includePriorities: prio.checked, includeRecommendations: recs.checked,
         brandName: brand.value, pullEmails: pullEmails.checked, useAI: useAI.checked,
+        emailQuery: emailQuery.value, driveId: driveId.value, sheetId: sheetId.value, sheetRange: sheetRange.value,
         recipients: recipients.value, subject: subject.value,
       };
     }

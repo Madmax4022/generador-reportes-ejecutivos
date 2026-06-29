@@ -128,6 +128,60 @@ async function applyAI(cfg, sections) {
   }
 }
 
+// Recopila datos REALES del usuario (correos de la semana, Drive, Sheets).
+// En modo demo (o sin cuenta conectada) devuelve datos de ejemplo realistas.
+async function gatherSources(user, cfg) {
+  const sections = Array.isArray(cfg.sections) ? [...cfg.sections] : [];
+  let emails = [];
+  const real = user && user.tokens && !DEMO;
+
+  if (cfg.pullEmails) {
+    if (real) {
+      emails = await google.recentEmails(user.tokens, cfg.emailQuery || 'newer_than:7d', 15);
+    } else {
+      emails = [
+        { subject: 'Cierre de venta — Cliente A', from: 'ventas@empresa.com', date: 'lun', snippet: 'Se concretó la venta del plan anual con el Cliente A por $12,000.' },
+        { subject: 'Incidencia soporte #482', from: 'soporte@empresa.com', date: 'mar', snippet: 'Dos clientes reportaron lentitud en el panel; se escaló a ingeniería.' },
+        { subject: 'Lanzamiento web nueva', from: 'marketing@empresa.com', date: 'jue', snippet: 'La nueva landing está en producción; +18% de conversión la primera semana.' },
+      ];
+    }
+    if (emails.length) {
+      sections.push({ title: 'Correos del período', content: emails.map((m) => `• ${m.subject} — ${m.from}`).join('\n') });
+    }
+  }
+
+  if (cfg.driveId) {
+    if (real) {
+      try {
+        const doc = await google.readDriveDoc(user.tokens, cfg.driveId);
+        sections.push({ title: `Documento: ${doc.name}`, content: doc.text });
+      } catch (e) { console.error('drive read:', e.message); }
+    } else {
+      sections.push({ title: 'Documento (demo): Plan semanal', content: 'Objetivos: cerrar 3 ventas, publicar la web, reducir tickets de soporte.' });
+    }
+  }
+
+  if (cfg.sheetId) {
+    if (real) {
+      try {
+        const sh = await google.readSheet(user.tokens, cfg.sheetId, cfg.sheetRange || 'A1:Z100');
+        sections.push({ title: `Hoja: ${sh.title}`, content: sh.text });
+      } catch (e) { console.error('sheet read:', e.message); }
+    } else {
+      sections.push({ title: 'Hoja (demo): KPIs', content: 'Métrica | Valor\nVentas | 3\nTickets | 5\nConversión | 18%' });
+    }
+  }
+
+  return { sections, emails };
+}
+
+// Recopila datos -> aplica IA -> devuelve el HTML del reporte.
+async function buildReport(user, cfg) {
+  const { sections, emails } = await gatherSources(user, cfg);
+  const finalCfg = await applyAI({ ...cfg, emails }, sections);
+  return generateReportHTML({ ...finalCfg, sections });
+}
+
 // ========================================
 // AUTENTICACIÓN
 // ========================================
@@ -213,22 +267,8 @@ app.post('/api/billing/checkout', requireLogin, async (req, res) => {
 // Vista previa (permitida durante la prueba; no requiere suscripción activa).
 app.post('/api/report/preview', requireLogin, async (req, res) => {
   try {
-    const cfg = req.body || {};
-    const sections = Array.isArray(cfg.sections) ? cfg.sections : [];
-    const user = currentUser(req);
-    let emails = [];
-    if (cfg.pullEmails && user && user.tokens && !DEMO) {
-      emails = await google.recentEmailSubjects(user.tokens, cfg.emailQuery || 'is:unread', 5);
-      if (emails.length) sections.push({ title: 'Correos recientes', content: emails.map((m) => `• ${m.subject} — ${m.from}`).join('\n') });
-    } else if (cfg.pullEmails && DEMO) {
-      emails = [
-        { subject: 'Reunión de planificación', from: 'jefe@empresa.com' },
-        { subject: 'Avance del proyecto X', from: 'equipo@empresa.com' },
-      ];
-      sections.push({ title: 'Correos recientes (demo)', content: emails.map((m) => `• ${m.subject} — ${m.from}`).join('\n') });
-    }
-    const finalCfg = await applyAI({ ...cfg, emails }, sections);
-    res.json({ html: generateReportHTML({ ...finalCfg, sections }) });
+    const html = await buildReport(currentUser(req), req.body || {});
+    res.json({ html });
   } catch (e) {
     console.error('preview error:', e.message);
     res.status(500).json({ error: 'No se pudo generar la vista previa' });
@@ -241,9 +281,8 @@ app.post('/api/report/send', requireLogin, requireAccess, async (req, res) => {
     const cfg = req.body || {};
     const recipients = (cfg.recipients || '').split(',').map((s) => s.trim()).filter(Boolean);
     if (!recipients.length) return res.status(400).json({ error: 'Agrega al menos un destinatario' });
-    const finalCfg = await applyAI(cfg, cfg.sections || []);
-    const html = generateReportHTML(finalCfg);
     const user = currentUser(req);
+    const html = await buildReport(user, cfg);
     if (DEMO || !user.tokens) return res.json({ ok: true, demo: true, sentTo: recipients, message: 'Envío simulado (modo demo).' });
     const messageId = await google.sendEmail(user.tokens, { to: recipients, subject: cfg.subject || cfg.title || 'Reporte Ejecutivo', html });
     res.json({ ok: true, messageId, sentTo: recipients });
@@ -289,8 +328,7 @@ async function runScheduled(schedule) {
   const cfg = schedule.config || {};
   const recipients = (cfg.recipients || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (!recipients.length) return;
-  const finalCfg = await applyAI(cfg, cfg.sections || []);
-  const html = generateReportHTML(finalCfg);
+  const html = await buildReport(user, cfg);
   if (user.demo || !user.tokens) {
     console.log(`[scheduler] (demo) reporte para ${user.email} -> ${recipients.join(', ')}`);
     return;

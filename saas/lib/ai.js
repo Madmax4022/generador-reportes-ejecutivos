@@ -17,7 +17,9 @@ try {
   AnthropicLib = null;
 }
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-8';
+// Modelo por defecto: Sonnet 4.6 (buena calidad, ~40% más barato que Opus).
+// Para máximo ahorro: ANTHROPIC_MODEL=claude-haiku-4-5 (~80% más barato).
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
 
 function isConfigured() {
   return Boolean(process.env.ANTHROPIC_API_KEY && AnthropicLib);
@@ -55,7 +57,15 @@ function buildPrompt({ title, period, summary, sections = [], emails = [] }) {
     if (s && s.title) material += `\n${s.title}:\n${s.content || ''}\n`;
   }
   if (emails.length) {
-    material += `\nCorreos recientes:\n` + emails.map((m) => `- ${m.subject} (${m.from})`).join('\n');
+    material +=
+      `\nCorreos del período:\n` +
+      emails
+        .map((m) => {
+          let line = `- [${m.date || ''}] ${m.subject} — ${m.from}`;
+          if (m.snippet) line += `\n  Extracto: ${m.snippet}`;
+          return line;
+        })
+        .join('\n');
   }
   return (
     `A partir del siguiente material en bruto, redacta un reporte ejecutivo para jefatura.\n\n` +
